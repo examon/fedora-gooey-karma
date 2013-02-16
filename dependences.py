@@ -1,7 +1,5 @@
 #!/usr/bin/python -tt
-
-# This code contains portion of pkg-provs-tree-view.py written by Seth Vidal,
-# available at http://skvidal.fedorapeople.org/misc/pkg-provs-tree-view.py
+# -*- coding: utf-8 -*-
 
 #    Fedora Gooey Karma prototype
 #    based on the https://github.com/mkrizek/fedora-gooey-karma
@@ -29,6 +27,10 @@ import yum
 
 
 class Dependences(object):
+    """
+    This code contains portion of pkg-provs-tree-view.py written by Seth Vidal,
+    available at http://skvidal.fedorapeople.org/misc/pkg-provs-tree-view.py
+    """
 
     def __init__(self, pname):
         if not pname:
@@ -132,3 +134,5 @@ class Dependences(object):
 
     def get_dep_tree(self):
         return self.dep_tree
+
+# vim: set expandtab ts=4 sts=4 sw=4 :

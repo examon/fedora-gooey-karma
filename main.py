@@ -1,4 +1,5 @@
 #!/usr/bin/python -tt
+# -*- coding:  utf-8 -*-
 
 #    Fedora Gooey Karma prototype
 #    based on the https://github.com/mkrizek/fedora-gooey-karma
@@ -66,13 +67,32 @@ class MainWindow(QtGui.QMainWindow):
         cachedir = yum.misc.getCacheDir()
         self.yb.repos.setCacheDir(cachedir)
 
+        # get installed packages from the @updates-testing
+        installed_packages = self.yb.rpmdb.returnPackages()
+        for pkg in installed_packages:
+            if pkg.ui_from_repo == '@updates-testing':
+                if pkg.nvr in self.pkg.testing_builds.keys():
+                    for build in self.pkg.builds:
+                        if pkg.nvr == build['nvr']:
+                            build['installed'] = True
+                            print "Added %s" % pkg.nvr
+
+        # for build in self.pkg.builds:
+        #     if 'installed' in build:
+        #         print build['name']
+
+
+        # print
+        # print self.pkg.testing_builds.keys()
+
+
     def __save_dep_tree(self, dep_list):
         self.ui.statusBar.clearMessage()
         # save dep tree
         # show it in related packages tree widget
         for item in self.pkg.builds:
             if item['name'] == dep_list['pkg_name']:
-                item['dependences'] = dep_list['dep_tree']
+                item['dep_tree'] = dep_list['dep_tree']
                 self._show_related_packages(item['nvr'], cached=False)
                 message = "Loading Related packages: %s DONE" % item['name']
                 self.ui.statusBar.showMessage(message)
@@ -83,32 +103,55 @@ class MainWindow(QtGui.QMainWindow):
         phrase = str(self.ui.searchEdit.text())
         self.ui.pkgList.clear()
         if not phrase:
-            for item in self.pkg.builds:
-                self.ui.pkgList.addItem(item['nvr'])
+            for build in self.pkg.builds:
+                if self.ui.installedBtn.isChecked():
+                    if 'installed' in build:
+                        self.ui.pkgList.addItem(build['nvr'])
+                elif self.ui.availableBtn.isChecked():
+                    self.ui.pkgList.addItem(build['nvr'])
             return
-        for item in self.pkg.builds:
-            if item['nvr'].startswith(phrase):
-                self.ui.pkgList.addItem(str(item['nvr']))
-            elif phrase in item:
-                self.ui.pkgList.addItem(str(item['nvr']))
+        for build in self.pkg.builds:
+            if build['nvr'].startswith(phrase):
+                if self.ui.installedBtn.isChecked():
+                    if 'installed' in build:
+                        self.ui.pkgList.addItem(build['nvr'])
+                elif self.ui.availableBtn.isChecked():
+                    self.ui.pkgList.addItem(build['nvr'])
+            elif phrase in build:
+                if self.ui.installedBtn.isChecked():
+                    if 'installed' in build:
+                        self.ui.pkgList.addItem(build['nvr'])
+                elif self.ui.availableBtn.isChecked():
+                    self.ui.pkgList.addItem(build['nvr'])
 
     def __save_available_pkg_list(self, pkg_object):
         self.pkg = pkg_object
         self.__setup_yum()
-        self.ui.availableBtn.setChecked(True)
-        self._show_available()
+        # self.ui.availableBtn.setChecked(True)
+        # self.ui.installedBtn.setChecked(True)
+        # self._show_available()
         self.ui.statusBar.clearMessage()
         message = "All available packages has been loaded."
         self.ui.statusBar.showMessage(message)
         self.ui.searchEdit.setEnabled(True)
 
+    def __decode_dict(self, dictionary, decoding='utf-8', data_type=str):
+        for key in dictionary.keys():
+            if isinstance(dictionary[key], data_type):
+                dictionary[key] = dictionary[key].decode(decoding)
+
     def _show_installed(self):
-        # add list of installed packages into the pkgList
-        # & sort them when needed
         self.ui.availableBtn.setChecked(False)
         if self.ui.installedBtn.isChecked():
-            self.ui.pkgList.clear()
-            # TODO
+            try:
+                self.ui.pkgList.clear()
+                for build in self.pkg.builds:
+                    if 'installed' in build:
+                        self.ui.pkgList.addItem(build['nvr'])
+                self.__search_pkg()
+            except Exception, err:
+                print "Packages are not ready yet. Please wait!"
+                print err
         elif not self.ui.installedBtn.isChecked():
             self.ui.pkgList.clear()
 
@@ -117,8 +160,8 @@ class MainWindow(QtGui.QMainWindow):
         if self.ui.availableBtn.isChecked():
             try:
                 self.ui.pkgList.clear()
-                for item in self.pkg.builds:
-                    self.ui.pkgList.addItem(item['nvr'])
+                for build in self.pkg.builds:
+                    self.ui.pkgList.addItem(build['nvr'])
                 self.__search_pkg()
             except Exception, err:
                 print "Packages are not ready yet. Please wait!"
@@ -170,21 +213,22 @@ class MainWindow(QtGui.QMainWindow):
             if yum_pkg is None:
                 yum_pkg = yum_pkg_list[0]
         if yum_pkg is not None:
-            #print dir(yum_pkg)
             # if we got yum package
             # fetch info from yum_pkg
             yum_values['name'] = yum_pkg.name
             yum_values['arch'] = yum_pkg.arch
             yum_values['version'] = yum_pkg.version
             yum_values['release'] = yum_pkg.release
-            yum_values['size'] = yum_pkg.size
+            yum_values['size'] = yum_pkg.packagesize
             yum_values['repo'] = yum_pkg.repo
-            yum_values['from_repo'] = ''    # TODO
+            yum_values['from_repo'] = yum_pkg.ui_from_repo
             yum_values['summary'] = yum_pkg.summary
             yum_values['url'] = yum_pkg.url
             yum_values['license'] = yum_pkg.license
             yum_values['description'] = yum_pkg.description
-            # map fetched yum info on the yum format string
+            # decode all strings found in yum_values to utf-8
+            self.__decode_dict(yum_values)
+            # map fetched yum info on the yum_format_string
             # add to the final browser string
             text_browser_string += yum_format_string % yum_values
 
@@ -237,7 +281,9 @@ class MainWindow(QtGui.QMainWindow):
         bodhi_values['stable_karma'] = data['stable_karma']
         bodhi_values['unstable_karma'] = data['unstable_karma']
         bodhi_values['notes'] = data['notes']
-        # map fetched bodhi info on the bodhi format string
+        # decode all strings found in bodhi_values to utf-8
+        self.__decode_dict(bodhi_values)
+        # map fetched bodhi info on the bodhi_format_string
         # add to the final browser string
         text_browser_string += bodhi_format_string % bodhi_values
         # set final browser string text
@@ -269,15 +315,15 @@ class MainWindow(QtGui.QMainWindow):
             for i in comments:
                 comment = QtGui.QTreeWidgetItem()
                 comment.setText(0, str(i[2]))
-                comment.setText(1, str(i[1]))
-                comment.setText(2, str(i[0]))
+                comment.setText(1, i[1])
+                comment.setText(2, i[0])
                 self.ui.treeWidget_feedback.insertTopLevelItem(0, comment)
 
         ## related packages
         self.ui.treeWidget_related_packages.clear()
         start_dep_worker = True
         for item in self.pkg.builds:
-            if item['nvr'] == pkg_item.text() and len(item) == 3:
+            if item['nvr'] == pkg_item.text() and 'dep_tree' in item:
                 # pkg_item.text() already has dep tree dont start dep_worker
                 start_dep_worker = False
         if not start_dep_worker:
@@ -312,7 +358,7 @@ class MainWindow(QtGui.QMainWindow):
         # TODO: make proper tree in treeWidget
         for item in self.pkg.builds:
             if item['nvr'] == pkg_name:
-                for package in reversed(item['dependences']):
+                for package in reversed(item['dep_tree']):
                     pkg = QtGui.QTreeWidgetItem()
                     pkg.setText(0, str(package))
                     self.ui.treeWidget_related_packages.insertTopLevelItem(0, pkg)
@@ -355,3 +401,5 @@ if __name__ == "__main__":
     win = MainWindow()
     win.show()
     sys.exit(app.exec_())
+
+# vim: set expandtab ts=4 sts=4 sw=4 :

@@ -1,4 +1,5 @@
 #!/usr/bin/python -tt
+# -*- coding: utf-8 -*-
 
 #    Fedora Gooey Karma prototype
 #    based on the https://github.com/mkrizek/fedora-gooey-karma
@@ -80,3 +81,5 @@ class Packages(object):
             for build in update['builds']:
                 self.testing_builds[build['nvr']] = update
                 self.builds.append({'nvr' : build['nvr'], 'name' : build['package']['name']})
+
+# vim: set expandtab ts=4 sts=4 sw=4 :
