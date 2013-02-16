@@ -75,16 +75,6 @@ class MainWindow(QtGui.QMainWindow):
                     for build in self.pkg.builds:
                         if pkg.nvr == build['nvr']:
                             build['installed'] = True
-                            print "Added %s" % pkg.nvr
-
-        # for build in self.pkg.builds:
-        #     if 'installed' in build:
-        #         print build['name']
-
-
-        # print
-        # print self.pkg.testing_builds.keys()
-
 
     def __save_dep_tree(self, dep_list):
         self.ui.statusBar.clearMessage()
@@ -127,9 +117,8 @@ class MainWindow(QtGui.QMainWindow):
     def __save_available_pkg_list(self, pkg_object):
         self.pkg = pkg_object
         self.__setup_yum()
-        # self.ui.availableBtn.setChecked(True)
-        # self.ui.installedBtn.setChecked(True)
-        # self._show_available()
+        self.ui.availableBtn.setChecked(True)
+        self._show_available()
         self.ui.statusBar.clearMessage()
         message = "All available packages has been loaded."
         self.ui.statusBar.showMessage(message)
