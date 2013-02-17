@@ -24,8 +24,13 @@
 
 from PySide import QtCore
 from PySide import QtGui
+from fedora.client import AuthError
+from fedora.client import ServerError
+from fedora.client.bodhi import BodhiClient
 from mainwindow_gui import Ui_MainWindow
-import yum
+from yum import YumBase
+from yum import misc
+
 import sys
 import packages
 import dependences
@@ -37,12 +42,16 @@ class MainWindow(QtGui.QMainWindow):
         super(MainWindow, self).__init__(parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.__show_karma_widget_comment()
 
         self.ui.actionQuit.triggered.connect(QtCore.QCoreApplication.instance().quit)
         self.ui.pkgList.currentItemChanged.connect(self._show_package_detail)
         self.ui.searchEdit.textChanged.connect(self.__search_pkg)
         self.ui.installedBtn.clicked.connect(self._show_installed)
         self.ui.availableBtn.clicked.connect(self._show_available)
+        self.ui.sendBtn.clicked.connect(self.__show_karma_widget_auth)
+        self.ui.okBtn.clicked.connect(self.__send_comment)
+        self.ui.cancelBtn.clicked.connect(self.__show_karma_widget_comment)
 
         self.pkg_worker = PackagesWorker()
         self.pkg_worker.start()
@@ -63,8 +72,8 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.statusBar.showMessage(message)
 
     def __setup_yum(self):
-        self.yb = yum.YumBase()
-        cachedir = yum.misc.getCacheDir()
+        self.yb = YumBase()
+        cachedir = misc.getCacheDir()
         self.yb.repos.setCacheDir(cachedir)
 
         # get installed packages from the @updates-testing
@@ -128,6 +137,76 @@ class MainWindow(QtGui.QMainWindow):
         for key in dictionary.keys():
             if isinstance(dictionary[key], data_type):
                 dictionary[key] = dictionary[key].decode(decoding)
+
+    def __show_karma_widget_auth(self):
+        self.ui.usernameEdit.show()
+        self.ui.usernameEdit.setFocus()
+        self.ui.passwordEdit.show()
+        self.ui.okBtn.show()
+        self.ui.cancelBtn.show()
+        self.ui.commentEdit.hide()
+        self.ui.karmaBox.hide()
+        self.ui.sendBtn.hide()
+        message = "Please enter FAS username and passowrd."
+        self.ui.statusBar.showMessage(message)
+
+    def __show_karma_widget_comment(self):
+        self.ui.usernameEdit.hide()
+        self.ui.passwordEdit.hide()
+        self.ui.okBtn.hide()
+        self.ui.cancelBtn.hide()
+        self.ui.commentEdit.show()
+        self.ui.karmaBox.show()
+        self.ui.sendBtn.show()
+        self.ui.statusBar.clearMessage()
+
+    def __send_comment(self):
+        comment = self.ui.commentEdit.text()
+        karma = self.ui.karmaBox.currentText()
+        update = None
+        pkg_title = None
+
+        if comment:
+            pkg_title = self.__activated_pkgList_item_text()
+            if pkg_title is not None:
+                for key in self.pkg.testing_builds.keys():
+                    if key == pkg_title:
+                        update = self.pkg.testing_builds[pkg_title]
+
+        if update is None:
+            message = "Comment not submitted: Could not get update from testing builds"
+            self.ui.statusBar.showMessage(message)
+            return
+        if not self.ui.usernameEdit.text():
+            message = "Please enter FAS username."
+            self.ui.statusBar.showMessage(message)
+            return
+        if not self.ui.passwordEdit.text():
+            message = "Please enter FAS password."
+            self.ui.statusBar.showMessage(message)
+            return
+
+        bc = BodhiClient()
+        bc.username = self.ui.usernameEdit.text()
+        bc.password = self.ui.passwordEdit.text()
+
+        message = "Processing... Wait please..."
+        self.ui.statusBar.showMessage(message)
+
+        for retry in range(3):
+            try:
+                result = bc.comment(update["title"], comment, karma=karma)
+                message = "Comment submitted successfully."
+                self.ui.statusBar.showMessage(message)
+                # save comment and end
+                self.pkg.testing_builds[pkg_title] = result['update']
+                return
+            except AuthError:
+                message = "Invalid username or password. Please try again."
+                self.ui.statusBar.showMessage(message)
+            except ServerError, e:
+                message = "Server error %s" % str(e)
+                self.ui.statusBar.showMessage(message)
 
     def _show_installed(self):
         self.ui.availableBtn.setChecked(False)

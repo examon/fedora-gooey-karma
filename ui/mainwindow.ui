@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>967</width>
-    <height>568</height>
+    <width>996</width>
+    <height>656</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -258,7 +258,7 @@ p, li { white-space: pre-wrap; }
     </item>
     <item>
      <widget class="QWidget" name="karmaWidget" native="true">
-      <layout class="QVBoxLayout" name="verticalLayout_3">
+      <layout class="QVBoxLayout" name="verticalLayout_7">
        <item>
         <widget class="Line" name="line_2">
          <property name="orientation">
@@ -267,38 +267,73 @@ p, li { white-space: pre-wrap; }
         </widget>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <layout class="QVBoxLayout" name="verticalLayout_6">
          <item>
-          <widget class="QLineEdit" name="commentEdit"/>
-         </item>
-         <item>
-          <widget class="QComboBox" name="karmaBox">
-           <property name="currentIndex">
-            <number>1</number>
-           </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_3">
            <item>
-            <property name="text">
-             <string>-1</string>
-            </property>
+            <widget class="QLineEdit" name="usernameEdit">
+             <property name="placeholderText">
+              <string>username</string>
+             </property>
+            </widget>
            </item>
            <item>
-            <property name="text">
-             <string>0</string>
-            </property>
+            <widget class="QLineEdit" name="passwordEdit">
+             <property name="echoMode">
+              <enum>QLineEdit::Password</enum>
+             </property>
+             <property name="placeholderText">
+              <string>password</string>
+             </property>
+            </widget>
            </item>
            <item>
-            <property name="text">
-             <string>+1</string>
-            </property>
+            <widget class="QPushButton" name="okBtn">
+             <property name="text">
+              <string>OK</string>
+             </property>
+            </widget>
            </item>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="sendBtn">
-           <property name="text">
-            <string>Send Karma</string>
-           </property>
-          </widget>
+           <item>
+            <widget class="QPushButton" name="cancelBtn">
+             <property name="text">
+              <string>Cancel</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="commentEdit"/>
+           </item>
+           <item>
+            <widget class="QComboBox" name="karmaBox">
+             <property name="currentIndex">
+              <number>1</number>
+             </property>
+             <item>
+              <property name="text">
+               <string>-1</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>0</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>+1</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="sendBtn">
+             <property name="text">
+              <string>Send Karma</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </item>
@@ -314,7 +349,7 @@ p, li { white-space: pre-wrap; }
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>967</width>
+     <width>996</width>
      <height>21</height>
     </rect>
    </property>

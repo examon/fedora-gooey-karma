@@ -23,7 +23,6 @@
 
 
 from fedora.client.bodhi import BodhiClient
-from getpass import getuser
 
 
 class Packages(object):
@@ -31,7 +30,7 @@ class Packages(object):
     __BODHI_URL = 'https://admin.fedoraproject.org/updates/'
 
     def __init__(self):
-        self.bodhi = BodhiClient(self.__BODHI_URL, username=getuser(), debug=None)
+        self.bodhi = BodhiClient(self.__BODHI_URL, debug=None)
 
     def get_builds(self, data):
         builds = []
@@ -67,7 +66,7 @@ class Packages(object):
         return []
 
     def load_available(self):
-        set_limit = 1000
+        set_limit = 10
         release = "F18"
 
         testing_updates = self.bodhi.query(release=release, status="testing", limit=set_limit)["updates"]
@@ -80,6 +79,6 @@ class Packages(object):
         for update in testing_updates:
             for build in update['builds']:
                 self.testing_builds[build['nvr']] = update
-                self.builds.append({'nvr' : build['nvr'], 'name' : build['package']['name']})
+                self.builds.append({'nvr': build['nvr'], 'name': build['package']['name']})
 
 # vim: set expandtab ts=4 sts=4 sw=4 :
