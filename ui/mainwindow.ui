@@ -214,6 +214,13 @@ p, li { white-space: pre-wrap; }
               </column>
              </widget>
             </item>
+            <item>
+             <widget class="QCheckBox" name="enableRelatedPackages">
+              <property name="text">
+               <string>Enable Related packages</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </item>
          </layout>

@@ -80,7 +80,7 @@ class MainWindow(QtGui.QMainWindow):
         installed_packages = self.yb.rpmdb.returnPackages()
         for pkg in installed_packages:
             if pkg.ui_from_repo == '@updates-testing':
-                if pkg.nvr in self.pkg.testing_builds.keys():
+                if pkg.nvr in self.pkg.testing_builds:
                     for build in self.pkg.builds:
                         if pkg.nvr == build['nvr']:
                             build['installed'] = True
@@ -134,7 +134,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.searchEdit.setEnabled(True)
 
     def __decode_dict(self, dictionary, decoding='utf-8', data_type=str):
-        for key in dictionary.keys():
+        for key in dictionary:
             if isinstance(dictionary[key], data_type):
                 dictionary[key] = dictionary[key].decode(decoding)
 
@@ -169,7 +169,7 @@ class MainWindow(QtGui.QMainWindow):
         if comment:
             pkg_title = self.__activated_pkgList_item_text()
             if pkg_title is not None:
-                for key in self.pkg.testing_builds.keys():
+                for key in self.pkg.testing_builds:
                     if key == pkg_title:
                         update = self.pkg.testing_builds[pkg_title]
 
@@ -361,10 +361,11 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.treeWidget_bugs.clear()
         bugs = self.pkg.get_bugs(data)
         if bugs:
-            for i in bugs.iterkeys():
+            print bugs
+            for key in bugs:
                 bug = QtGui.QTreeWidgetItem()
-                bug.setText(0, str(i))
-                bug.setText(1, str(bugs[i]))
+                bug.setText(0, str(key))
+                bug.setText(1, str(bugs[key]))
                 self.ui.treeWidget_bugs.insertTopLevelItem(0, bug)
 
         ## test cases
@@ -389,6 +390,9 @@ class MainWindow(QtGui.QMainWindow):
 
         ## related packages
         self.ui.treeWidget_related_packages.clear()
+        # end when checkbox is not checked
+        if not self.ui.enableRelatedPackages.isChecked():
+            return
         start_dep_worker = True
         for item in self.pkg.builds:
             if item['nvr'] == pkg_item.text() and 'dep_tree' in item:
@@ -402,11 +406,11 @@ class MainWindow(QtGui.QMainWindow):
             # start new dep_worker and save dep tree
             for item in self.pkg.builds:
                 if item['nvr'] == pkg_item.text():
-                    # if dep_worker is running, dont start another
+                    # if dep_worker is running, don't start another
                     if self.dep_worker.isRunning():
                         break
                     self.dep_worker.set_package_name(item['name'])
-                    self.dep_worker.start()
+                    self.dep_worker.start()    # TODO: freezing
 
     def __activated_pkgList_item_text(self):
         index = 0
@@ -446,8 +450,7 @@ class DependencesWorker(QtCore.QThread):
         self.load_dependences_start.emit(str(self.__pkg_name))
         __dep = dependences.Dependences(str(self.__pkg_name))
         __dep_tree = __dep.get_dep_tree()
-        self.load_dependences_done.emit({'pkg_name' : self.__pkg_name,
-                                         'dep_tree' : __dep_tree})
+        self.load_dependences_done.emit({'pkg_name': self.__pkg_name, 'dep_tree': __dep_tree})
 
 
 class PackagesWorker(QtCore.QThread):

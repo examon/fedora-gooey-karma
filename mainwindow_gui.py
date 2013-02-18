@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui/mainwindow.ui'
 #
-# Created: Sun Feb 17 21:32:19 2013
+# Created: Mon Feb 18 20:30:22 2013
 #      by: pyside-uic 0.2.13 running on PySide 1.1.0
 #
 # WARNING! All changes made in this file will be lost!
@@ -101,6 +101,9 @@ class Ui_MainWindow(object):
         self.treeWidget_related_packages = QtGui.QTreeWidget(self.centralwidget)
         self.treeWidget_related_packages.setObjectName("treeWidget_related_packages")
         self.verticalLayout_2.addWidget(self.treeWidget_related_packages)
+        self.enableRelatedPackages = QtGui.QCheckBox(self.centralwidget)
+        self.enableRelatedPackages.setObjectName("enableRelatedPackages")
+        self.verticalLayout_2.addWidget(self.enableRelatedPackages)
         self.horizontalLayout_2.addLayout(self.verticalLayout_2)
         self.verticalLayout_4.addLayout(self.horizontalLayout_2)
         self.treeWidget_feedback = QtGui.QTreeWidget(self.centralwidget)
@@ -189,6 +192,7 @@ class Ui_MainWindow(object):
         self.treeWidget_bugs.headerItem().setText(1, QtGui.QApplication.translate("MainWindow", "Title", None, QtGui.QApplication.UnicodeUTF8))
         self.treeWidget_test_cases.headerItem().setText(0, QtGui.QApplication.translate("MainWindow", "Test cases", None, QtGui.QApplication.UnicodeUTF8))
         self.treeWidget_related_packages.headerItem().setText(0, QtGui.QApplication.translate("MainWindow", "Related packages", None, QtGui.QApplication.UnicodeUTF8))
+        self.enableRelatedPackages.setText(QtGui.QApplication.translate("MainWindow", "Enable Related packages", None, QtGui.QApplication.UnicodeUTF8))
         self.treeWidget_feedback.headerItem().setText(0, QtGui.QApplication.translate("MainWindow", "Karma", None, QtGui.QApplication.UnicodeUTF8))
         self.treeWidget_feedback.headerItem().setText(1, QtGui.QApplication.translate("MainWindow", "User", None, QtGui.QApplication.UnicodeUTF8))
         self.treeWidget_feedback.headerItem().setText(2, QtGui.QApplication.translate("MainWindow", "Comment", None, QtGui.QApplication.UnicodeUTF8))

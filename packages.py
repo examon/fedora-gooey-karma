@@ -30,12 +30,12 @@ class Packages(object):
     __BODHI_URL = 'https://admin.fedoraproject.org/updates/'
 
     def __init__(self):
-        self.bodhi = BodhiClient(self.__BODHI_URL, debug=None)
+        self.bc = BodhiClient(self.__BODHI_URL, debug=None)
 
     def get_builds(self, data):
         builds = []
         for build in data['builds']:
-             builds.append(build['nvr'])
+            builds.append(build['nvr'])
         return builds
 
     def get_bugs(self, data):
@@ -49,10 +49,10 @@ class Packages(object):
         comments = []
         if len(data['comments']):
             for comment in data['comments']:
-                anonymouse = ""
-                if (comment['anonymous']):
-                    anonymouse = " (unauthenticated)"
-                comments.append([comment['text'], comment['author'] + anonymouse, comment['karma']])
+                anonymous = ""
+                if comment['anonymous']:
+                    anonymous = " (unauthenticated)"
+                comments.append([comment['text'], comment['author'] + anonymous, comment['karma']])
         return comments
 
     def get_test_cases(self, data):
@@ -66,14 +66,14 @@ class Packages(object):
         return []
 
     def load_available(self):
-        set_limit = 10
-        release = "F18"
+        SET_LIMIT = 1000
+        RELEASE = "F18"
 
-        testing_updates = self.bodhi.query(release=release, status="testing", limit=set_limit)["updates"]
+        testing_updates = self.bc.query(release=RELEASE, status="testing", limit=SET_LIMIT)["updates"]
         testing_updates = [x for x in testing_updates if not x["request"]]
-        testing_updates.extend(self.bodhi.query(release=release, status="pending", request="testing", limit=set_limit)["updates"])
+        testing_updates.extend(self.bc.query(release=RELEASE, status="pending", request="testing", limit=SET_LIMIT)["updates"])
 
-        self.builds =[]
+        self.builds = []
         self.testing_builds = {}
 
         for update in testing_updates:
