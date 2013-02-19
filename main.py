@@ -488,7 +488,7 @@ class Packages(object):
 
     def load_available(self):
         ## load bodhi testing/pending
-        SET_LIMIT = 2
+        SET_LIMIT = 1000
         testing_updates = self.bc.query(release=self.__RELEASE, status='testing', limit=SET_LIMIT)['updates']
         testing_updates = [x for x in testing_updates if not x['request']]
         testing_updates.extend(self.bc.query(release=self.__RELEASE, status='pending', request='testing', limit=SET_LIMIT)['updates'])
