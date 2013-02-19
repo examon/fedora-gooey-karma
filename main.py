@@ -121,8 +121,8 @@ class MainWindow(QtGui.QMainWindow):
             raise ValueError("Could not return pkg_available or pkg_installed.")
 
     def __save_available_pkg_list(self, pkg_object):
+        print "save available"
         self.pkg_available = pkg_object
-
         self.ui.availableBtn.setChecked(True)
         self._show_available()
         self.ui.statusBar.clearMessage()
@@ -131,8 +131,8 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.searchEdit.setEnabled(True)
 
     def __save_installed_pkg_list(self, pkg_object):
+        print "save installed"
         self.pkg_installed = pkg_object
-
         self.ui.installedBtn.setChecked(True)
         self._show_installed()
         self.ui.statusBar.clearMessage()
@@ -425,13 +425,17 @@ class PackagesWorker(QtCore.QThread):
         super(PackagesWorker, self).__init__(parent)
 
     def run(self):
-        __packages = Packages()
         self.load_available_packages_start.emit(self)
-        __packages.load_available()
-        self.load_available_packages_done.emit(__packages)
+        __packages_available = Packages()
+        __packages_available.load_available()
+        self.load_available_packages_done.emit(__packages_available)
+        print "available done"
+
         self.load_installed_packages_start.emit(self)
-        __packages.load_installed()
-        self.load_installed_packages_done.emit(__packages)
+        __packages_installed = Packages()
+        __packages_installed.load_installed()
+        self.load_installed_packages_done.emit(__packages_installed)
+        print "installed done"
 
 
 class Packages(object):
@@ -484,7 +488,7 @@ class Packages(object):
 
     def load_available(self):
         ## load bodhi testing/pending
-        SET_LIMIT = 10
+        SET_LIMIT = 2
         testing_updates = self.bc.query(release=self.__RELEASE, status='testing', limit=SET_LIMIT)['updates']
         testing_updates = [x for x in testing_updates if not x['request']]
         testing_updates.extend(self.bc.query(release=self.__RELEASE, status='pending', request='testing', limit=SET_LIMIT)['updates'])
@@ -498,16 +502,19 @@ class Packages(object):
     def load_installed(self):
         ## load installed packages
         installed_packages = self.yb.rpmdb.returnPackages()
+        installed_updates_testing = []
         for pkg in installed_packages:
             if pkg.ui_from_repo == '@updates-testing':
-                pkg_update = self.bc.query(release=self.__RELEASE, package=pkg.nvr)['updates']
-                if pkg_update:
-                    for update in pkg_update:
-                        for build in update['builds']:
-                            self.testing_builds[build['nvr']] = update
-                            self.builds.append({'nvr': build['nvr'],
-                                                'name': build['package']['name'],
-                                                'installed': True})
+                installed_updates_testing.append(pkg.nvr)
+        for package in installed_updates_testing:
+            pkg_update = self.bc.query(release=self.__RELEASE, package=package)['updates']
+            if pkg_update:
+                for update in pkg_update:
+                    for build in update['builds']:
+                        self.testing_builds[build['nvr']] = update
+                        self.builds.append({'nvr': build['nvr'],
+                                            'name': build['package']['name'],
+                                            'installed': True})
 
 
 if __name__ == "__main__":
