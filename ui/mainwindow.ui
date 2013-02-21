@@ -14,7 +14,7 @@
    <string>Fedora Gooey Karma</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_5">
+   <layout class="QVBoxLayout" name="verticalLayout_3">
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_4">
       <item>
@@ -104,6 +104,38 @@
             <bool>true</bool>
            </property>
           </widget>
+         </item>
+         <item>
+          <widget class="Line" name="line_3">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
+           <item>
+            <widget class="QComboBox" name="releaseComboBox">
+             <item>
+              <property name="text">
+               <string>Fedora 18</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Fedora 17</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="loadPackagesBtn">
+             <property name="text">
+              <string>Load Packages</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </widget>
@@ -343,6 +375,9 @@ p, li { white-space: pre-wrap; }
    </layout>
    <zorder></zorder>
    <zorder>karmaWidget</zorder>
+   <zorder>releaseComboBox</zorder>
+   <zorder>loadPackagesBtn</zorder>
+   <zorder>releaseComboBox</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">

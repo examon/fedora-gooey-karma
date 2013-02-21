@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui/mainwindow.ui'
 #
-# Created: Tue Feb 19 00:09:20 2013
+# Created: Thu Feb 21 19:51:15 2013
 #      by: pyside-uic 0.2.13 running on PySide 1.1.0
 #
 # WARNING! All changes made in this file will be lost!
@@ -15,8 +15,8 @@ class Ui_MainWindow(object):
         MainWindow.resize(996, 656)
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
-        self.verticalLayout_5 = QtGui.QVBoxLayout(self.centralwidget)
-        self.verticalLayout_5.setObjectName("verticalLayout_5")
+        self.verticalLayout_3 = QtGui.QVBoxLayout(self.centralwidget)
+        self.verticalLayout_3.setObjectName("verticalLayout_3")
         self.horizontalLayout_4 = QtGui.QHBoxLayout()
         self.horizontalLayout_4.setObjectName("horizontalLayout_4")
         self.pkgLists = QtGui.QWidget(self.centralwidget)
@@ -57,6 +57,22 @@ class Ui_MainWindow(object):
         self.pkgList.setTabKeyNavigation(False)
         self.pkgList.setObjectName("pkgList")
         self.verticalLayout.addWidget(self.pkgList)
+        self.line_3 = QtGui.QFrame(self.pkgLists)
+        self.line_3.setFrameShape(QtGui.QFrame.HLine)
+        self.line_3.setFrameShadow(QtGui.QFrame.Sunken)
+        self.line_3.setObjectName("line_3")
+        self.verticalLayout.addWidget(self.line_3)
+        self.horizontalLayout_5 = QtGui.QHBoxLayout()
+        self.horizontalLayout_5.setObjectName("horizontalLayout_5")
+        self.releaseComboBox = QtGui.QComboBox(self.pkgLists)
+        self.releaseComboBox.setObjectName("releaseComboBox")
+        self.releaseComboBox.addItem("")
+        self.releaseComboBox.addItem("")
+        self.horizontalLayout_5.addWidget(self.releaseComboBox)
+        self.loadPackagesBtn = QtGui.QPushButton(self.pkgLists)
+        self.loadPackagesBtn.setObjectName("loadPackagesBtn")
+        self.horizontalLayout_5.addWidget(self.loadPackagesBtn)
+        self.verticalLayout.addLayout(self.horizontalLayout_5)
         self.horizontalLayout_4.addWidget(self.pkgLists)
         self.line = QtGui.QFrame(self.centralwidget)
         self.line.setFrameShadow(QtGui.QFrame.Plain)
@@ -111,7 +127,7 @@ class Ui_MainWindow(object):
         self.treeWidget_feedback.header().setMinimumSectionSize(30)
         self.verticalLayout_4.addWidget(self.treeWidget_feedback)
         self.horizontalLayout_4.addLayout(self.verticalLayout_4)
-        self.verticalLayout_5.addLayout(self.horizontalLayout_4)
+        self.verticalLayout_3.addLayout(self.horizontalLayout_4)
         self.karmaWidget = QtGui.QWidget(self.centralwidget)
         self.karmaWidget.setObjectName("karmaWidget")
         self.verticalLayout_7 = QtGui.QVBoxLayout(self.karmaWidget)
@@ -153,7 +169,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_3.addWidget(self.sendBtn)
         self.verticalLayout_6.addLayout(self.horizontalLayout_3)
         self.verticalLayout_7.addLayout(self.verticalLayout_6)
-        self.verticalLayout_5.addWidget(self.karmaWidget)
+        self.verticalLayout_3.addWidget(self.karmaWidget)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtGui.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 996, 21))
@@ -179,6 +195,9 @@ class Ui_MainWindow(object):
         self.installedBtn.setText(QtGui.QApplication.translate("MainWindow", "Installed", None, QtGui.QApplication.UnicodeUTF8))
         self.availableBtn.setText(QtGui.QApplication.translate("MainWindow", "Available", None, QtGui.QApplication.UnicodeUTF8))
         self.pkgList.setSortingEnabled(True)
+        self.releaseComboBox.setItemText(0, QtGui.QApplication.translate("MainWindow", "Fedora 18", None, QtGui.QApplication.UnicodeUTF8))
+        self.releaseComboBox.setItemText(1, QtGui.QApplication.translate("MainWindow", "Fedora 17", None, QtGui.QApplication.UnicodeUTF8))
+        self.loadPackagesBtn.setText(QtGui.QApplication.translate("MainWindow", "Load Packages", None, QtGui.QApplication.UnicodeUTF8))
         self.pkgNameLabel.setText(QtGui.QApplication.translate("MainWindow", "Package name", None, QtGui.QApplication.UnicodeUTF8))
         self.textBrowser.setHtml(QtGui.QApplication.translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"

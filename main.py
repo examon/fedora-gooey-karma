@@ -43,33 +43,56 @@ class MainWindow(QtGui.QMainWindow):
         cachedir = misc.getCacheDir()
         self.yb.repos.setCacheDir(cachedir)
 
+        self.pkg_available = {}
+        self.pkg_installed = {}
+
         self.__show_karma_widget_comment()
 
         self.ui.actionQuit.triggered.connect(QtCore.QCoreApplication.instance().quit)
         self.ui.pkgList.currentItemChanged.connect(self._show_package_detail)
         self.ui.searchEdit.textChanged.connect(self.__search_pkg)
-        self.ui.installedBtn.clicked.connect(self._show_installed)
-        self.ui.availableBtn.clicked.connect(self._show_available)
+        self.ui.installedBtn.clicked.connect(self.__show_installed)
+        self.ui.availableBtn.clicked.connect(self.__show_available)
         self.ui.sendBtn.clicked.connect(self.__show_karma_widget_auth)
         self.ui.okBtn.clicked.connect(self.__send_comment)
         self.ui.cancelBtn.clicked.connect(self.__show_karma_widget_comment)
+        self.ui.loadPackagesBtn.clicked.connect(self.__start_pkg_worker)
+        self.ui.releaseComboBox.currentIndexChanged.connect(self.__refresh_package_list)
 
         self.pkg_worker = PackagesWorker()
-        self.pkg_worker.start()
         self.pkg_worker.load_available_packages_done.connect(self.__save_available_pkg_list)
         self.pkg_worker.load_available_packages_start.connect(self.__available_pkg_list_loading_info)
         self.pkg_worker.load_installed_packages_done.connect(self.__save_installed_pkg_list)
         self.pkg_worker.load_installed_packages_start.connect(self.__installed_pkg_list_loading_info)
 
+    def __start_pkg_worker(self):
+        if self.pkg_worker.isRunning():
+            # don't start another pkg_worker when one is already started
+            return
+        releasever = self.ui.releaseComboBox.currentText().split()[-1]
+        self.pkg_worker.set_release(releasever)
+        self.pkg_worker.start()
+
     def __available_pkg_list_loading_info(self):
-        message = "Please wait... Loading all available packages..."
+        release = self.ui.releaseComboBox.currentText()
+        message = "Please wait... Loading all available packages. [%s]" % release
         self.ui.statusBar.showMessage(message)
         #self.ui.searchEdit.setEnabled(False)
 
     def __installed_pkg_list_loading_info(self):
-        message = "Please wait... Loading all installed packages..."
+        release = self.ui.releaseComboBox.currentText()
+        message = "Please wait... Loading all installed packages. [%s]" % release
         self.ui.statusBar.showMessage(message)
         #self.ui.searchEdit.setEnabled(False)
+
+    def __refresh_package_list(self):
+        if self.ui.installedBtn.isChecked():
+            self.__show_installed()
+        elif self.ui.availableBtn.isChecked():
+            self.__show_available()
+        elif not self.ui.installedBtn.isChecked() and not self.ui.availableBtn.isChecked():
+            self.ui.installedBtn.setChecked(True)
+            self.__show_installed()
 
     def __search_pkg(self):
         # used for searchEdit searching
@@ -77,7 +100,6 @@ class MainWindow(QtGui.QMainWindow):
             return
         if self.__get_current_set() is None:
             return
-
         phrase = str(self.ui.searchEdit.text())
         self.ui.pkgList.clear()
         if not phrase:
@@ -105,16 +127,17 @@ class MainWindow(QtGui.QMainWindow):
     def __get_current_set(self):
         """
         Returns installed or available pkg object.
-        Depends which one is used at the moment
+        Depends which one is used at the moment.
         """
+        releasever = self.ui.releaseComboBox.currentText().split()[-1]
         if self.ui.availableBtn.isChecked():
             try:
-                return self.pkg_available
+                return self.pkg_available[releasever]
             except AttributeError, e:
                 print "pkg_available is not ready: %s" % e
         elif self.ui.installedBtn.isChecked():
             try:
-                return self.pkg_installed
+                return self.pkg_installed[releasever]
             except AttributeError, e:
                 print "pkg_installed is not ready: %s" % e
         else:
@@ -122,21 +145,25 @@ class MainWindow(QtGui.QMainWindow):
 
     def __save_available_pkg_list(self, pkg_object):
         print "save available"
-        self.pkg_available = pkg_object
-        self.ui.availableBtn.setChecked(True)
-        self._show_available()
+        self.pkg_available[pkg_object[0]] = pkg_object[1]
+        releasever = self.ui.releaseComboBox.currentText().split()[-1]
+        if releasever == pkg_object[0]:
+            self.ui.availableBtn.setChecked(True)
+            self.__show_available()
         self.ui.statusBar.clearMessage()
-        message = "All available packages has been loaded."
+        message = "All available packages has been loaded. [Fedora %s]" % pkg_object[0]
         self.ui.statusBar.showMessage(message)
         self.ui.searchEdit.setEnabled(True)
 
     def __save_installed_pkg_list(self, pkg_object):
         print "save installed"
-        self.pkg_installed = pkg_object
-        self.ui.installedBtn.setChecked(True)
-        self._show_installed()
+        self.pkg_installed[pkg_object[0]] = pkg_object[1]
+        releasever = self.ui.releaseComboBox.currentText().split()[-1]
+        if releasever == pkg_object[0]:
+            self.ui.installedBtn.setChecked(True)
+            self.__show_installed()
         self.ui.statusBar.clearMessage()
-        message = "All installed packages has been loaded."
+        message = "All installed packages has been loaded. [Fedora %s]" % pkg_object[0]
         self.ui.statusBar.showMessage(message)
         self.ui.searchEdit.setEnabled(True)
 
@@ -215,7 +242,7 @@ class MainWindow(QtGui.QMainWindow):
                 message = "Server error %s" % str(e)
                 self.ui.statusBar.showMessage(message)
 
-    def _show_installed(self):
+    def __show_installed(self):
         self.ui.availableBtn.setChecked(False)
         if self.ui.installedBtn.isChecked():
             try:
@@ -230,7 +257,7 @@ class MainWindow(QtGui.QMainWindow):
         elif not self.ui.installedBtn.isChecked():
             self.ui.pkgList.clear()
 
-    def _show_available(self):
+    def __show_available(self):
         self.ui.installedBtn.setChecked(False)
         if self.ui.availableBtn.isChecked():
             try:
@@ -424,27 +451,29 @@ class PackagesWorker(QtCore.QThread):
     def __init__(self, parent=None):
         super(PackagesWorker, self).__init__(parent)
 
-    def run(self):
-        self.load_available_packages_start.emit(self)
-        __packages_available = Packages()
-        __packages_available.load_available()
-        self.load_available_packages_done.emit(__packages_available)
-        print "available done"
+    def set_release(self, release):
+        self.releasever = release
 
+    def run(self):
         self.load_installed_packages_start.emit(self)
         __packages_installed = Packages()
-        __packages_installed.load_installed()
-        self.load_installed_packages_done.emit(__packages_installed)
+        __packages_installed.load_installed(self.releasever)
+        self.load_installed_packages_done.emit((self.releasever, __packages_installed))
         print "installed done"
+
+        self.load_available_packages_start.emit(self)
+        __packages_available = Packages()
+        __packages_available.load_available(self.releasever)
+        self.load_available_packages_done.emit((self.releasever, __packages_available))
+        print "available done"
 
 
 class Packages(object):
 
-    __BODHI_URL = 'https://admin.fedoraproject.org/updates/'
-    __RELEASE = "F18"
 
     def __init__(self):
-        self.bc = BodhiClient(self.__BODHI_URL, debug=None)
+        bodhi_url = 'https://admin.fedoraproject.org/updates/'
+        self.bc = BodhiClient(bodhi_url, debug=None)
 
         self.yb = YumBase()
         cachedir = misc.getCacheDir()
@@ -486,28 +515,35 @@ class Packages(object):
         # when package does not have test cases
         return []
 
-    def load_available(self):
+    def load_available(self, release_short):
         ## load bodhi testing/pending
-        SET_LIMIT = 1000
-        testing_updates = self.bc.query(release=self.__RELEASE, status='testing', limit=SET_LIMIT)['updates']
+        pkg_limit = 1000
+        release_short = "%s%s" % ("F", release_short)
+        testing_updates = self.bc.query(release=release_short, status='testing', limit=pkg_limit)['updates']
         testing_updates = [x for x in testing_updates if not x['request']]
-        testing_updates.extend(self.bc.query(release=self.__RELEASE, status='pending', request='testing', limit=SET_LIMIT)['updates'])
+        testing_updates.extend(self.bc.query(release=release_short, status='pending', request='testing', limit=pkg_limit)['updates'])
 
         for update in testing_updates:
             for build in update['builds']:
+                print build
                 self.testing_builds[build['nvr']] = update
                 self.builds.append({'nvr': build['nvr'],
                                     'name': build['package']['name']})
 
-    def load_installed(self):
+    def load_installed(self, releasever):
         ## load installed packages
         installed_packages = self.yb.rpmdb.returnPackages()
         installed_updates_testing = []
         for pkg in installed_packages:
-            if pkg.ui_from_repo == '@updates-testing':
-                installed_updates_testing.append(pkg.nvr)
+            # get Fedora release shortcut (e.g. fc18)
+            rel = pkg.release.split('.')[-1]
+            if rel.startswith('fc') and releasever in rel:
+                if pkg.ui_from_repo == '@updates-testing':
+                    installed_updates_testing.append(pkg.nvr)
+
+        release_short = "%s%s" % ("F", releasever)
         for package in installed_updates_testing:
-            pkg_update = self.bc.query(release=self.__RELEASE, package=package)['updates']
+            pkg_update = self.bc.query(release=release_short, package=package)['updates']
             if pkg_update:
                 for update in pkg_update:
                     for build in update['builds']:
