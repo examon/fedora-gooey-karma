@@ -30,9 +30,15 @@ from fedora.client.bodhi import BodhiClient
 from mainwindow_gui import Ui_MainWindow
 from yum import YumBase
 from yum import misc
+from yum import Errors
+from webbrowser import open_new_tab
 import sys
 
+
 class MainWindow(QtGui.QMainWindow):
+
+    __BUGZILLA_REDHAT_URL = "http://bugzilla.redhat.com/show_bug.cgi?id="
+    __FEDORAPEOPLE_TESTCASE_URL = "https://fedoraproject.org/wiki/QA:Testcase_"
 
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
@@ -58,6 +64,8 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.cancelBtn.clicked.connect(self.__show_karma_widget_comment)
         self.ui.loadPackagesBtn.clicked.connect(self.__start_pkg_worker)
         self.ui.releaseComboBox.currentIndexChanged.connect(self.__refresh_package_list)
+        self.ui.treeWidget_bugs.itemClicked.connect(self.__show_bug_in_browser)
+        self.ui.treeWidget_test_cases.itemClicked.connect(self.__show_testcase_in_browser)
 
         self.pkg_worker = PackagesWorker()
         self.pkg_worker.load_available_packages_done.connect(self.__save_available_pkg_list)
@@ -77,13 +85,19 @@ class MainWindow(QtGui.QMainWindow):
         release = self.ui.releaseComboBox.currentText()
         message = "Please wait... Loading all available packages. [%s]" % release
         self.ui.statusBar.showMessage(message)
-        #self.ui.searchEdit.setEnabled(False)
 
     def __installed_pkg_list_loading_info(self):
         release = self.ui.releaseComboBox.currentText()
         message = "Please wait... Loading all installed packages. [%s]" % release
         self.ui.statusBar.showMessage(message)
-        #self.ui.searchEdit.setEnabled(False)
+
+    def __show_bug_in_browser(self):
+        bug_id = self.ui.treeWidget_bugs.currentItem().text(0)
+        open_new_tab("%s%s" % (self.__BUGZILLA_REDHAT_URL, bug_id))
+
+    def __show_testcase_in_browser(self):
+        testcase_name = self.ui.treeWidget_test_cases.currentItem().text(0).replace(' ', '_')
+        open_new_tab("%s%s" % (self.__FEDORAPEOPLE_TESTCASE_URL, testcase_name))
 
     def __refresh_package_list(self):
         if self.ui.installedBtn.isChecked():
@@ -337,7 +351,13 @@ class MainWindow(QtGui.QMainWindow):
 
             ## related packages
             self.ui.treeWidget_related_packages.clear()
-            deplist = self.yb.findDeps(yum_pkg_deplist)
+            deplist = []
+
+            try:
+                deplist = self.yb.findDeps(yum_pkg_deplist)
+            except Errors.NoMoreMirrorsRepoError, e:
+                print "_show_package_detail() error: %s" % e
+
             for key in deplist:
                 for packages in deplist[key]:
                     pkg_name = deplist[key][packages][0]
