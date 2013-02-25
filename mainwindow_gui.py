@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui/mainwindow.ui'
 #
-# Created: Thu Feb 21 19:51:15 2013
+# Created: Sun Feb 24 13:49:45 2013
 #      by: pyside-uic 0.2.13 running on PySide 1.1.0
 #
 # WARNING! All changes made in this file will be lost!
@@ -57,6 +57,12 @@ class Ui_MainWindow(object):
         self.pkgList.setTabKeyNavigation(False)
         self.pkgList.setObjectName("pkgList")
         self.verticalLayout.addWidget(self.pkgList)
+        self.karmaCheckBox = QtGui.QCheckBox(self.pkgLists)
+        self.karmaCheckBox.setObjectName("karmaCheckBox")
+        self.verticalLayout.addWidget(self.karmaCheckBox)
+        self.karmaUsernameEdit = QtGui.QLineEdit(self.pkgLists)
+        self.karmaUsernameEdit.setObjectName("karmaUsernameEdit")
+        self.verticalLayout.addWidget(self.karmaUsernameEdit)
         self.line_3 = QtGui.QFrame(self.pkgLists)
         self.line_3.setFrameShape(QtGui.QFrame.HLine)
         self.line_3.setFrameShadow(QtGui.QFrame.Sunken)
@@ -195,6 +201,8 @@ class Ui_MainWindow(object):
         self.installedBtn.setText(QtGui.QApplication.translate("MainWindow", "Installed", None, QtGui.QApplication.UnicodeUTF8))
         self.availableBtn.setText(QtGui.QApplication.translate("MainWindow", "Available", None, QtGui.QApplication.UnicodeUTF8))
         self.pkgList.setSortingEnabled(True)
+        self.karmaCheckBox.setText(QtGui.QApplication.translate("MainWindow", "Karma not submitted", None, QtGui.QApplication.UnicodeUTF8))
+        self.karmaUsernameEdit.setPlaceholderText(QtGui.QApplication.translate("MainWindow", "username", None, QtGui.QApplication.UnicodeUTF8))
         self.releaseComboBox.setItemText(0, QtGui.QApplication.translate("MainWindow", "Fedora 18", None, QtGui.QApplication.UnicodeUTF8))
         self.releaseComboBox.setItemText(1, QtGui.QApplication.translate("MainWindow", "Fedora 17", None, QtGui.QApplication.UnicodeUTF8))
         self.loadPackagesBtn.setText(QtGui.QApplication.translate("MainWindow", "Load Packages", None, QtGui.QApplication.UnicodeUTF8))

@@ -22,17 +22,17 @@
 #    Author: Tomas Meszaros <exo@tty.sk>
 
 
-from PySide import QtCore
-from PySide import QtGui
+import sys
+import webbrowser
+import yum
 from fedora.client import AuthError
 from fedora.client import ServerError
 from fedora.client.bodhi import BodhiClient
 from mainwindow_gui import Ui_MainWindow
-from yum import YumBase
-from yum import misc
+from yum.misc import getCacheDir
 from yum import Errors
-from webbrowser import open_new_tab
-import sys
+from PySide import QtCore
+from PySide import QtGui
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -45,18 +45,20 @@ class MainWindow(QtGui.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self.yb = YumBase()
-        cachedir = misc.getCacheDir()
+        self.yb = yum.YumBase()
+        cachedir = getCacheDir()
         self.yb.repos.setCacheDir(cachedir)
 
         self.pkg_available = {}
         self.pkg_installed = {}
 
         self.__show_karma_widget_comment()
+        self.__hide_karma_name_filter()
 
         self.ui.actionQuit.triggered.connect(QtCore.QCoreApplication.instance().quit)
-        self.ui.pkgList.currentItemChanged.connect(self._show_package_detail)
+        self.ui.pkgList.currentItemChanged.connect(self.__show_package_detail)
         self.ui.searchEdit.textChanged.connect(self.__search_pkg)
+        self.ui.karmaUsernameEdit.textChanged.connect(self.__filter_already_submitted)
         self.ui.installedBtn.clicked.connect(self.__show_installed)
         self.ui.availableBtn.clicked.connect(self.__show_available)
         self.ui.sendBtn.clicked.connect(self.__show_karma_widget_auth)
@@ -66,6 +68,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.releaseComboBox.currentIndexChanged.connect(self.__refresh_package_list)
         self.ui.treeWidget_bugs.itemClicked.connect(self.__show_bug_in_browser)
         self.ui.treeWidget_test_cases.itemClicked.connect(self.__show_testcase_in_browser)
+        self.ui.karmaCheckBox.stateChanged.connect(self.__filter_already_submitted)
 
         self.pkg_worker = PackagesWorker()
         self.pkg_worker.load_available_packages_done.connect(self.__save_available_pkg_list)
@@ -75,7 +78,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def __start_pkg_worker(self):
         if self.pkg_worker.isRunning():
-            # don't start another pkg_worker when one is already started
+            # don't start another pkg_worker while another has been already
             return
         releasever = self.ui.releaseComboBox.currentText().split()[-1]
         self.pkg_worker.set_release(releasever)
@@ -93,11 +96,11 @@ class MainWindow(QtGui.QMainWindow):
 
     def __show_bug_in_browser(self):
         bug_id = self.ui.treeWidget_bugs.currentItem().text(0)
-        open_new_tab("%s%s" % (self.__BUGZILLA_REDHAT_URL, bug_id))
+        webbrowser.open_new_tab("%s%s" % (self.__BUGZILLA_REDHAT_URL, bug_id))
 
     def __show_testcase_in_browser(self):
         testcase_name = self.ui.treeWidget_test_cases.currentItem().text(0).replace(' ', '_')
-        open_new_tab("%s%s" % (self.__FEDORAPEOPLE_TESTCASE_URL, testcase_name))
+        webbrowser.open_new_tab("%s%s" % (self.__FEDORAPEOPLE_TESTCASE_URL, testcase_name))
 
     def __refresh_package_list(self):
         if self.ui.installedBtn.isChecked():
@@ -114,16 +117,17 @@ class MainWindow(QtGui.QMainWindow):
             return
         if self.__get_current_set() is None:
             return
+
         phrase = str(self.ui.searchEdit.text())
-        self.ui.pkgList.clear()
         if not phrase:
-            for build in self.__get_current_set().builds:
+            if self.ui.karmaCheckBox.isChecked() and self.ui.karmaUsernameEdit.text():
                 if self.ui.installedBtn.isChecked():
-                    if 'installed' in build:
-                        self.ui.pkgList.addItem(build['nvr'])
-                elif self.ui.availableBtn.isChecked():
-                    self.ui.pkgList.addItem(build['nvr'])
+                    self.__filter_already_submitted()
+            else:
+                self.__populate_pkgList()
             return
+
+        self.ui.pkgList.clear()
         for build in self.__get_current_set().builds:
             if build['nvr'].startswith(phrase):
                 if self.ui.installedBtn.isChecked():
@@ -131,16 +135,9 @@ class MainWindow(QtGui.QMainWindow):
                         self.ui.pkgList.addItem(build['nvr'])
                 elif self.ui.availableBtn.isChecked():
                     self.ui.pkgList.addItem(build['nvr'])
-            elif phrase in build:
-                if self.ui.installedBtn.isChecked():
-                    if 'installed' in build:
-                        self.ui.pkgList.addItem(build['nvr'])
-                elif self.ui.availableBtn.isChecked():
-                    self.ui.pkgList.addItem(build['nvr'])
 
     def __get_current_set(self):
-        """
-        Returns installed or available pkg object.
+        """ Returns installed or available pkg object.
         Depends which one is used at the moment.
         """
         releasever = self.ui.releaseComboBox.currentText().split()[-1]
@@ -256,14 +253,51 @@ class MainWindow(QtGui.QMainWindow):
                 message = "Server error %s" % str(e)
                 self.ui.statusBar.showMessage(message)
 
+    def __show_karma_name_filter(self):
+        self.ui.karmaCheckBox.show()
+        self.ui.karmaUsernameEdit.show()
+
+    def __hide_karma_name_filter(self):
+        self.ui.karmaCheckBox.hide()
+        self.ui.karmaUsernameEdit.hide()
+
+    def __filter_already_submitted(self):
+        """ Add only those installed packages to the pkgList for which user did not
+        submitted karma. (uses username from the karmaUsernameEdit)
+        """
+        if not self.ui.karmaCheckBox.isChecked() or not self.ui.karmaUsernameEdit.text():
+            self.__populate_pkgList()
+            return
+        self.ui.pkgList.clear()
+
+        for build in self.__get_current_set().builds:
+            data = self.__get_current_set().testing_builds[build['nvr']]
+            comments = self.__get_current_set().get_comments(data)
+            already_submitted = False
+            for comment in comments:
+                if comment[1] == self.ui.karmaUsernameEdit.text():
+                    already_submitted = True
+                    break
+            if not already_submitted:
+                self.ui.pkgList.addItem(build['nvr'])
+
+    def __populate_pkgList(self):
+        self.ui.pkgList.clear()
+        for build in self.__get_current_set().builds:
+            if self.ui.installedBtn.isChecked() and 'installed' in build:
+                self.ui.pkgList.addItem(build['nvr'])
+            elif self.ui.availableBtn.isChecked():
+                self.ui.pkgList.addItem(build['nvr'])
+
     def __show_installed(self):
+        if self.ui.installedBtn.isChecked():
+            self.__show_karma_name_filter()
+        else:
+            self.__hide_karma_name_filter()
         self.ui.availableBtn.setChecked(False)
         if self.ui.installedBtn.isChecked():
             try:
-                self.ui.pkgList.clear()
-                for build in self.__get_current_set().builds:
-                    if 'installed' in build:
-                        self.ui.pkgList.addItem(build['nvr'])
+                self.__populate_pkgList()
                 self.__search_pkg()
             except Exception, err:
                 print "Packages are not ready yet. Please wait!"
@@ -272,12 +306,11 @@ class MainWindow(QtGui.QMainWindow):
             self.ui.pkgList.clear()
 
     def __show_available(self):
+        self.__hide_karma_name_filter()
         self.ui.installedBtn.setChecked(False)
         if self.ui.availableBtn.isChecked():
             try:
-                self.ui.pkgList.clear()
-                for build in self.__get_current_set().builds:
-                    self.ui.pkgList.addItem(build['nvr'])
+                self.__populate_pkgList()
                 self.__search_pkg()
             except Exception, err:
                 print "Packages are not ready yet. Please wait!"
@@ -285,7 +318,17 @@ class MainWindow(QtGui.QMainWindow):
         elif not self.ui.availableBtn.isChecked():
             self.ui.pkgList.clear()
 
-    def _show_package_detail(self, pkg_item):
+    def __show_package_detail(self, pkg_item):
+        """Shows package detail in the MainWindow.
+
+        Updates all info in every widget when user click on the item in the pkgList.
+
+        Args:
+            pkg_item: A currently selected pkgList item widget.
+
+        Returns:
+            Returns when pkg_item is None.
+        """
         if pkg_item is None:
             return
         data = self.__get_current_set().testing_builds[pkg_item.text()]
@@ -453,6 +496,11 @@ class MainWindow(QtGui.QMainWindow):
                 self.ui.treeWidget_feedback.insertTopLevelItem(0, comment)
 
     def __activated_pkgList_item_text(self):
+        """Finds currently activated item in the pkgList.
+
+        Returns:
+            item.text(), currently activated item text.
+        """
         index = 0
         # check current activated item in pkgList
         for i in range(self.ui.pkgList.count()):
@@ -463,6 +511,16 @@ class MainWindow(QtGui.QMainWindow):
 
 
 class PackagesWorker(QtCore.QThread):
+    """Worker class used for new thread.
+
+    Attributes:
+        releasever: A string storing Fedora release version number.
+        load_available_packages_start: A signal, emitted when load_available is called.
+        load_available_packages_done: A signal, emitted when load_available returns.
+        load_installed_packages_start: A signal, emitted when load_installed is called.
+        load_installed_packages_done: A signal, emitted when load_installed returns.
+    """
+
     load_available_packages_start = QtCore.Signal(object)
     load_installed_packages_start = QtCore.Signal(object)
     load_available_packages_done = QtCore.Signal(object)
@@ -472,9 +530,18 @@ class PackagesWorker(QtCore.QThread):
         super(PackagesWorker, self).__init__(parent)
 
     def set_release(self, release):
+        """Sets given argument as a releasever.
+
+        Method stores given Fedora release number to the public class attribute releasever.
+
+        Args:
+            release: A string containing Fedora release version number.
+        """
         self.releasever = release
 
     def run(self):
+        """Calls load_installed and load_available, when done, emits corresponding signals.
+        """
         self.load_installed_packages_start.emit(self)
         __packages_installed = Packages()
         __packages_installed.load_installed(self.releasever)
@@ -489,26 +556,58 @@ class PackagesWorker(QtCore.QThread):
 
 
 class Packages(object):
+    """This class makes information retrieval from the Bodhi query data easier.
 
+    Attributes:
+        builds: A list of dictionaries, where each dict contains basic info about one package.
+
+                builds[index]['nvr'] - full package name (including version, etc.)
+                builds[index]['name'] - package name without version
+                builds[index]['installed'] - True when package is installed
+
+        testing_builds: A dictionary containing Bodhi client query output for earch package
+    """
 
     def __init__(self):
         bodhi_url = 'https://admin.fedoraproject.org/updates/'
         self.bc = BodhiClient(bodhi_url, debug=None)
 
-        self.yb = YumBase()
-        cachedir = misc.getCacheDir()
+        self.yb = yum.YumBase()
+        cachedir = getCacheDir()
         self.yb.repos.setCacheDir(cachedir)
 
         self.builds = []
         self.testing_builds = {}
 
     def get_builds(self, data):
+        """Fetches builds from the data.
+
+        Retrieves builds list from the packages data.
+
+        Args:
+            data: A doctionary containing Bodhi client query output for each package (see: testing_builds).
+
+        Returns:
+            builds: A list of all builds fetched from the data.
+        """
         builds = []
         for build in data['builds']:
             builds.append(build['nvr'])
         return builds
 
     def get_bugs(self, data):
+        """Fetches bugs from the data.
+
+        Searches for all bugs in package data.
+
+        Args:
+            data: A doctionary containing Bodhi client query output for each package (see: testing_builds).
+
+        Returns:
+            bugs: A list of all builds fetched from the data.
+
+                  bugs = { bug_id: "Bug commentary", .... }
+        """
         bugs = {}
         if len(data['bugs']):
             for bug in data['bugs']:
@@ -516,6 +615,18 @@ class Packages(object):
         return bugs
 
     def get_comments(self, data):
+        """Fetches user comments from the data.
+
+        Loads all user freedback info, e.g. comments, karma, username.
+
+        Args:
+            data: A doctionary containing Bodhi client query output for each package (see: testing_builds).
+
+        Returns:
+            comments: A list of lists where earch sublist represents feedback for one package.
+
+                      comments = [ ["Feedback string", "author nickname", int(karma)], ... ]
+        """
         comments = []
         if len(data['comments']):
             for comment in data['comments']:
@@ -526,6 +637,18 @@ class Packages(object):
         return comments
 
     def get_test_cases(self, data):
+        """Gets package test cases from the data
+
+        Retrieves all test cases from the package data.
+
+        Args:
+            data: A doctionary containing Bodhi client query output for each package (see: testing_builds).
+
+        Returns:
+            test_cases: A list containing all test cases related to data.
+
+            When data does not contains any test cases, returns empty list.
+        """
         if data['nagged'] is not None:
             if 'test_cases' in data['nagged']:
                 test_cases = data['nagged']['test_cases']
@@ -535,23 +658,40 @@ class Packages(object):
         # when package does not have test cases
         return []
 
-    def load_available(self, release_short):
-        ## load bodhi testing/pending
+    def load_available(self, releasever):
+        """Loads available packages from the bodhi related to the passed release version.
+
+        Should load only pending & testing packages.
+        Bodhi url: https://admin.fedoraproject.org/updates
+
+        Stores all loaded data in the testing_builds & builds.
+
+        Args:
+            releasever: Fedora release version number (e.g. 18).
+        """
         pkg_limit = 1000
-        release_short = "%s%s" % ("F", release_short)
-        testing_updates = self.bc.query(release=release_short, status='testing', limit=pkg_limit)['updates']
+        releasever = "%s%s" % ("F", releasever)
+        testing_updates = self.bc.query(release=releasever, status='testing', limit=pkg_limit)['updates']
         testing_updates = [x for x in testing_updates if not x['request']]
-        testing_updates.extend(self.bc.query(release=release_short, status='pending', request='testing', limit=pkg_limit)['updates'])
+        testing_updates.extend(self.bc.query(release=releasever, status='pending', request='testing', limit=pkg_limit)['updates'])
 
         for update in testing_updates:
             for build in update['builds']:
-                print build
                 self.testing_builds[build['nvr']] = update
                 self.builds.append({'nvr': build['nvr'],
                                     'name': build['package']['name']})
 
     def load_installed(self, releasever):
-        ## load installed packages
+        """Loads installed packages related to the releasever.
+
+        Loads all locally installed packages related to the Fedora release version.
+        Processes only those installed packages which are from @updates-testing repo.
+
+        Stores all loaded data in the testing_builds & builds.
+
+        Args:
+            releasever: Fedora release version number (e.g. 18).
+        """
         installed_packages = self.yb.rpmdb.returnPackages()
         installed_updates_testing = []
         for pkg in installed_packages:
@@ -567,10 +707,11 @@ class Packages(object):
             if pkg_update:
                 for update in pkg_update:
                     for build in update['builds']:
-                        self.testing_builds[build['nvr']] = update
-                        self.builds.append({'nvr': build['nvr'],
-                                            'name': build['package']['name'],
-                                            'installed': True})
+                        if not build['nvr'] in self.testing_builds:
+                            self.testing_builds[build['nvr']] = update
+                            self.builds.append({'nvr': build['nvr'],
+                                                'name': build['package']['name'],
+                                                'installed': True})
 
 
 if __name__ == "__main__":
