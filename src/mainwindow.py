@@ -714,10 +714,13 @@ class Packages(object):
                                                 'installed': True})
 
 
-if __name__ == "__main__":
+def main():
     app = QtGui.QApplication(sys.argv)
     win = MainWindow()
     win.show()
     sys.exit(app.exec_())
+
+if __name__ == "__main__":
+    main()
 
 # vim: set expandtab ts=4 sts=4 sw=4 :
