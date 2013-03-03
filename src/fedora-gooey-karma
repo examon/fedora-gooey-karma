@@ -21,6 +21,10 @@
 #
 #    Author: Tomas Meszaros <exo@tty.sk>
 
-import mainwindow
+import sys
+import os
 
+sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '../share/fedora-gooey-karma'))
+
+import mainwindow
 mainwindow.main()
