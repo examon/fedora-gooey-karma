@@ -25,6 +25,7 @@
 import sys
 import webbrowser
 import yum
+import multiprocessing
 from fedora.client import AuthError
 from fedora.client import ServerError
 from fedora.client.bodhi import BodhiClient
@@ -681,6 +682,22 @@ class Packages(object):
                 self.builds.append({'nvr': build['nvr'],
                                     'name': build['package']['name']})
 
+    def __bodhi_query_pkg(self, conn, installed_updates_testing, releasever, process):
+        release_short = "%s%s" % ("F", releasever)
+        for package in installed_updates_testing:
+            pkg_update = self.bc.query(release=release_short, package=package)['updates']
+            if pkg_update:
+                for update in pkg_update:
+                    for build in update['builds']:
+                        if not build['nvr'] in self.testing_builds:
+                            self.testing_builds[build['nvr']] = update
+                            self.builds.append({'nvr': build['nvr'],
+                                                'name': build['package']['name'],
+                                                'installed': True})
+                            print "%s: %s" % (process, build['nvr'])
+        conn.send([self.builds, self.testing_builds])
+
+
     def load_installed(self, releasever):
         """Loads installed packages related to the releasever.
 
@@ -701,17 +718,53 @@ class Packages(object):
                 if pkg.ui_from_repo == '@updates-testing':
                     installed_updates_testing.append(pkg.nvr)
 
-        release_short = "%s%s" % ("F", releasever)
-        for package in installed_updates_testing:
-            pkg_update = self.bc.query(release=release_short, package=package)['updates']
-            if pkg_update:
-                for update in pkg_update:
-                    for build in update['builds']:
-                        if not build['nvr'] in self.testing_builds:
-                            self.testing_builds[build['nvr']] = update
-                            self.builds.append({'nvr': build['nvr'],
-                                                'name': build['package']['name'],
-                                                'installed': True})
+        # split installed_updates_testing to four chunks
+        # each Process will process one quarter
+        quarter = len(installed_updates_testing) / 4
+        q1 = installed_updates_testing[0:quarter]
+        q2 = installed_updates_testing[quarter:(2 * quarter)]
+        q3 = installed_updates_testing[(2 * quarter):(3 * quarter)]
+        q4 = installed_updates_testing[(3 * quarter):len(installed_updates_testing)]
+
+        # using 4x Process to speed it up
+        parent_conn_1, child_conn_1 = multiprocessing.Pipe()
+        query_1 = multiprocessing.Process(target=self.__bodhi_query_pkg,
+                                          args=(child_conn_1, q1, releasever, "query_1"))
+        parent_conn_2, child_conn_2 = multiprocessing.Pipe()
+        query_2 = multiprocessing.Process(target=self.__bodhi_query_pkg,
+                                          args=(child_conn_2, q2, releasever, "query_2"))
+        parent_conn_3, child_conn_3 = multiprocessing.Pipe()
+        query_3 = multiprocessing.Process(target=self.__bodhi_query_pkg,
+                                          args=(child_conn_3, q3, releasever, "query_3"))
+        parent_conn_4, child_conn_4 = multiprocessing.Pipe()
+        query_4 = multiprocessing.Process(target=self.__bodhi_query_pkg,
+                                          args=(child_conn_4, q4, releasever, "query_4"))
+        query_1.start()
+        query_2.start()
+        query_3.start()
+        query_4.start()
+        query_1.join()
+        query_2.join()
+        query_3.join()
+        query_4.join()
+
+        builds_1, testing_builds_1 = parent_conn_1.recv()
+        for i in builds_1:
+            self.builds.append(i)
+        builds_2, testing_builds_2 = parent_conn_2.recv()
+        for i in builds_2:
+            self.builds.append(i)
+        builds_3, testing_builds_3 = parent_conn_3.recv()
+        for i in builds_3:
+            self.builds.append(i)
+        builds_4, testing_builds_4 = parent_conn_4.recv()
+        for i in builds_4:
+            self.builds.append(i)
+
+        self.testing_builds.update(testing_builds_1)
+        self.testing_builds.update(testing_builds_2)
+        self.testing_builds.update(testing_builds_3)
+        self.testing_builds.update(testing_builds_4)
 
 
 def main():
