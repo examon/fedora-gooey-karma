@@ -121,9 +121,8 @@ class MainWindow(QtGui.QMainWindow):
 
         phrase = str(self.ui.searchEdit.text())
         if not phrase:
-            if self.ui.karmaCheckBox.isChecked() and self.ui.karmaUsernameEdit.text():
-                if self.ui.installedBtn.isChecked():
-                    self.__filter_already_submitted()
+            if self.ui.karmaCheckBox.isChecked() and self.ui.karmaUsernameEdit.text() and self.ui.installedBtn.isChecked():
+                self.__filter_already_submitted()
             else:
                 self.__populate_pkgList()
             return
@@ -682,7 +681,7 @@ class Packages(object):
                 self.builds.append({'nvr': build['nvr'],
                                     'name': build['package']['name']})
 
-    def __bodhi_query_pkg(self, conn, installed_updates_testing, releasever, process):
+    def __bodhi_query_pkg(self, conn, installed_updates_testing, releasever):
         release_short = "%s%s" % ("F", releasever)
         for package in installed_updates_testing:
             pkg_update = self.bc.query(release=release_short, package=package)['updates']
@@ -694,7 +693,6 @@ class Packages(object):
                             self.builds.append({'nvr': build['nvr'],
                                                 'name': build['package']['name'],
                                                 'installed': True})
-                            print "%s: %s" % (process, build['nvr'])
         conn.send([self.builds, self.testing_builds])
 
 
@@ -728,17 +726,14 @@ class Packages(object):
 
         # using 4x Process to speed it up
         parent_conn_1, child_conn_1 = multiprocessing.Pipe()
-        query_1 = multiprocessing.Process(target=self.__bodhi_query_pkg,
-                                          args=(child_conn_1, q1, releasever, "query_1"))
+        query_1 = multiprocessing.Process(target=self.__bodhi_query_pkg, args=(child_conn_1, q1, releasever))
         parent_conn_2, child_conn_2 = multiprocessing.Pipe()
-        query_2 = multiprocessing.Process(target=self.__bodhi_query_pkg,
-                                          args=(child_conn_2, q2, releasever, "query_2"))
+        query_2 = multiprocessing.Process(target=self.__bodhi_query_pkg, args=(child_conn_2, q2, releasever))
         parent_conn_3, child_conn_3 = multiprocessing.Pipe()
-        query_3 = multiprocessing.Process(target=self.__bodhi_query_pkg,
-                                          args=(child_conn_3, q3, releasever, "query_3"))
+        query_3 = multiprocessing.Process(target=self.__bodhi_query_pkg, args=(child_conn_3, q3, releasever))
         parent_conn_4, child_conn_4 = multiprocessing.Pipe()
-        query_4 = multiprocessing.Process(target=self.__bodhi_query_pkg,
-                                          args=(child_conn_4, q4, releasever, "query_4"))
+        query_4 = multiprocessing.Process(target=self.__bodhi_query_pkg, args=(child_conn_4, q4, releasever))
+
         query_1.start()
         query_2.start()
         query_3.start()
