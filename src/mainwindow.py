@@ -1,4 +1,4 @@
-#!/usr/bin/python -tt
+#!/usr/bin/python2 -tt
 # -*- coding:  utf-8 -*-
 
 #    Fedora Gooey Karma prototype
@@ -585,7 +585,7 @@ class Packages(object):
         Retrieves builds list from the packages data.
 
         Args:
-            data: A doctionary containing Bodhi client query output for each package (see: testing_builds).
+            data: A dictionary containing Bodhi client query output for each package (see: testing_builds).
 
         Returns:
             builds: A list of all builds fetched from the data.
@@ -601,7 +601,7 @@ class Packages(object):
         Searches for all bugs in package data.
 
         Args:
-            data: A doctionary containing Bodhi client query output for each package (see: testing_builds).
+            data: A dictionary containing Bodhi client query output for each package (see: testing_builds).
 
         Returns:
             bugs: A list of all builds fetched from the data.
@@ -620,7 +620,7 @@ class Packages(object):
         Loads all user freedback info, e.g. comments, karma, username.
 
         Args:
-            data: A doctionary containing Bodhi client query output for each package (see: testing_builds).
+            data: A dictionary containing Bodhi client query output for each package (see: testing_builds).
 
         Returns:
             comments: A list of lists where earch sublist represents feedback for one package.
@@ -642,7 +642,7 @@ class Packages(object):
         Retrieves all test cases from the package data.
 
         Args:
-            data: A doctionary containing Bodhi client query output for each package (see: testing_builds).
+            data: A dictionary containing Bodhi client query output for each package (see: testing_builds).
 
         Returns:
             test_cases: A list containing all test cases related to data.
