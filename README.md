@@ -11,6 +11,9 @@ fedora-gooey-karma provides similar functionality to the fedora-easy-karma via G
     python
     pyside
     yum
+    bodhi-client
+    python-fedora
+    fedora-cert
 
 ## Contribute
 
