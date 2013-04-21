@@ -146,16 +146,19 @@ class MainWindow(QtGui.QMainWindow):
                 return self.pkg_available[releasever]
             except AttributeError, e:
                 print "pkg_available is not ready: %s" % e
+            except KeyError, e:
+                print "pkg_available is not ready: %s" % e
         elif self.ui.installedBtn.isChecked():
             try:
                 return self.pkg_installed[releasever]
             except AttributeError, e:
                 print "pkg_installed is not ready: %s" % e
+            except KeyError, e:
+                print "pkg_installed is not ready: %s" % e
         else:
             raise ValueError("Could not return pkg_available or pkg_installed.")
 
     def __save_available_pkg_list(self, pkg_object):
-        print "save available"
         self.pkg_available[pkg_object[0]] = pkg_object[1]
         releasever = self.ui.releaseComboBox.currentText().split()[-1]
         if releasever == pkg_object[0]:
@@ -167,7 +170,6 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.searchEdit.setEnabled(True)
 
     def __save_installed_pkg_list(self, pkg_object):
-        print "save installed"
         self.pkg_installed[pkg_object[0]] = pkg_object[1]
         releasever = self.ui.releaseComboBox.currentText().split()[-1]
         if releasever == pkg_object[0]:
@@ -283,7 +285,10 @@ class MainWindow(QtGui.QMainWindow):
 
     def __populate_pkgList(self):
         self.ui.pkgList.clear()
-        for build in self.__get_current_set().builds:
+        current_set = self.__get_current_set()
+        if current_set is None:
+            return
+        for build in current_set.builds:
             if self.ui.installedBtn.isChecked() and 'installed' in build:
                 self.ui.pkgList.addItem(build['nvr'])
             elif self.ui.availableBtn.isChecked():
