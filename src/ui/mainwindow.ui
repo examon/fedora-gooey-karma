@@ -132,6 +132,11 @@
             <widget class="QComboBox" name="releaseComboBox">
              <item>
               <property name="text">
+               <string>Fedora 19</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
                <string>Fedora 18</string>
               </property>
              </item>
@@ -389,9 +394,6 @@ p, li { white-space: pre-wrap; }
    </layout>
    <zorder></zorder>
    <zorder>karmaWidget</zorder>
-   <zorder>releaseComboBox</zorder>
-   <zorder>loadPackagesBtn</zorder>
-   <zorder>releaseComboBox</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
