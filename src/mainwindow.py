@@ -638,7 +638,8 @@ class Packages(object):
                 anonymous = ""
                 if comment['anonymous']:
                     anonymous = " (unauthenticated)"
-                comments.append([comment['text'], comment['author'] + anonymous, comment['karma']])
+                comments.append([comment['text'], comment['author'] + anonymous,
+                                comment['karma']])
         return comments
 
     def get_test_cases(self, data):
@@ -676,10 +677,12 @@ class Packages(object):
         """
         pkg_limit = 1000
         releasever = "%s%s" % ("F", releasever)
-        testing_updates = self.bc.query(release=releasever, status='testing', limit=pkg_limit)['updates']
+        # This takes way too long...
+        testing_updates = self.bc.query(release=releasever, status='testing',
+                                        limit=pkg_limit)['updates']
         testing_updates = [x for x in testing_updates if not x['request']]
-        testing_updates.extend(self.bc.query(release=releasever, status='pending', request='testing', limit=pkg_limit)['updates'])
-
+        testing_updates.extend(self.bc.query(release=releasever, status='pending',
+                               request='testing', limit=pkg_limit)['updates'])
         for update in testing_updates:
             for build in update['builds']:
                 self.testing_builds[build['nvr']] = update
@@ -731,13 +734,17 @@ class Packages(object):
 
         # using 4x Process to speed it up
         parent_conn_1, child_conn_1 = multiprocessing.Pipe()
-        query_1 = multiprocessing.Process(target=self.__bodhi_query_pkg, args=(child_conn_1, q1, releasever))
+        query_1 = multiprocessing.Process(target=self.__bodhi_query_pkg,
+                                          args=(child_conn_1, q1, releasever))
         parent_conn_2, child_conn_2 = multiprocessing.Pipe()
-        query_2 = multiprocessing.Process(target=self.__bodhi_query_pkg, args=(child_conn_2, q2, releasever))
+        query_2 = multiprocessing.Process(target=self.__bodhi_query_pkg,
+                                          args=(child_conn_2, q2, releasever))
         parent_conn_3, child_conn_3 = multiprocessing.Pipe()
-        query_3 = multiprocessing.Process(target=self.__bodhi_query_pkg, args=(child_conn_3, q3, releasever))
+        query_3 = multiprocessing.Process(target=self.__bodhi_query_pkg,
+                                          args=(child_conn_3, q3, releasever))
         parent_conn_4, child_conn_4 = multiprocessing.Pipe()
-        query_4 = multiprocessing.Process(target=self.__bodhi_query_pkg, args=(child_conn_4, q4, releasever))
+        query_4 = multiprocessing.Process(target=self.__bodhi_query_pkg,
+                                          args=(child_conn_4, q4, releasever))
 
         query_1.start()
         query_2.start()
