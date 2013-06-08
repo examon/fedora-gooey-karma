@@ -129,23 +129,7 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_5">
            <item>
-            <widget class="QComboBox" name="releaseComboBox">
-             <item>
-              <property name="text">
-               <string>Fedora 19</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Fedora 18</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Fedora 17</string>
-              </property>
-             </item>
-            </widget>
+            <widget class="QComboBox" name="releaseComboBox"/>
            </item>
            <item>
             <widget class="QPushButton" name="loadPackagesBtn">
@@ -401,7 +385,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>996</width>
-     <height>21</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">

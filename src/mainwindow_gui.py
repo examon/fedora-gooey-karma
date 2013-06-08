@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui/mainwindow.ui'
 #
-# Created: Thu Apr 25 08:41:48 2013
+# Created: Sat Jun  8 02:06:40 2013
 #      by: pyside-uic 0.2.13 running on PySide 1.1.0
 #
 # WARNING! All changes made in this file will be lost!
@@ -72,9 +72,6 @@ class Ui_MainWindow(object):
         self.horizontalLayout_5.setObjectName("horizontalLayout_5")
         self.releaseComboBox = QtGui.QComboBox(self.pkgLists)
         self.releaseComboBox.setObjectName("releaseComboBox")
-        self.releaseComboBox.addItem("")
-        self.releaseComboBox.addItem("")
-        self.releaseComboBox.addItem("")
         self.horizontalLayout_5.addWidget(self.releaseComboBox)
         self.loadPackagesBtn = QtGui.QPushButton(self.pkgLists)
         self.loadPackagesBtn.setObjectName("loadPackagesBtn")
@@ -179,7 +176,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.addWidget(self.karmaWidget)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtGui.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 996, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 996, 23))
         self.menubar.setObjectName("menubar")
         self.menuFile = QtGui.QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")
@@ -204,9 +201,6 @@ class Ui_MainWindow(object):
         self.pkgList.setSortingEnabled(True)
         self.karmaCheckBox.setText(QtGui.QApplication.translate("MainWindow", "Karma not submitted", None, QtGui.QApplication.UnicodeUTF8))
         self.karmaUsernameEdit.setPlaceholderText(QtGui.QApplication.translate("MainWindow", "username", None, QtGui.QApplication.UnicodeUTF8))
-        self.releaseComboBox.setItemText(0, QtGui.QApplication.translate("MainWindow", "Fedora 19", None, QtGui.QApplication.UnicodeUTF8))
-        self.releaseComboBox.setItemText(1, QtGui.QApplication.translate("MainWindow", "Fedora 18", None, QtGui.QApplication.UnicodeUTF8))
-        self.releaseComboBox.setItemText(2, QtGui.QApplication.translate("MainWindow", "Fedora 17", None, QtGui.QApplication.UnicodeUTF8))
         self.loadPackagesBtn.setText(QtGui.QApplication.translate("MainWindow", "Load Packages", None, QtGui.QApplication.UnicodeUTF8))
         self.pkgNameLabel.setText(QtGui.QApplication.translate("MainWindow", "Package name", None, QtGui.QApplication.UnicodeUTF8))
         self.textBrowser.setHtml(QtGui.QApplication.translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
