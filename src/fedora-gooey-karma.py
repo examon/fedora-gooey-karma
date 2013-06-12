@@ -4,7 +4,7 @@
 #    Fedora Gooey Karma prototype
 #    based on the https://github.com/mkrizek/fedora-gooey-karma
 #
-#    Copyright (C) 2013 Tomas Meszaros
+#    Copyright (C) 2013 
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ import sys
 import webbrowser
 import yum
 import multiprocessing
+import Queue
 from fedora.client import AuthError
 from fedora.client import ServerError
 from fedora.client.bodhi import BodhiClient
@@ -37,6 +38,7 @@ from PySide import QtGui
 
 from mainwindow_gui import Ui_MainWindow
 from packagesworker import PackagesWorker 
+from bodhiworker import BodhiWorker
 from packages import Packages
 
 
@@ -46,12 +48,17 @@ class MainWindow(QtGui.QMainWindow):
     __BUGZILLA_REDHAT_URL = "http://bugzilla.redhat.com/show_bug.cgi?id="
     __FEDORAPEOPLE_TESTCASE_URL = "https://fedoraproject.org/wiki/QA:Testcase_"
     __FEDORA_RELEASES = [ 'Fedora 19', 'Fedora 18', 'Fedora 17' ]
+    __BODHI_WORKERS_COUNT = 15
 
     def __init__(self, parent=None):
         # GUI
         super(MainWindow, self).__init__(parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+
+        # Prepare Queues
+        self.bodhi_workers_queue = Queue.Queue()
+        self.pkg_worker_queue = Queue.Queue()
 
         # Prepare ui
         self.__show_karma_widget_comment()
@@ -65,6 +72,11 @@ class MainWindow(QtGui.QMainWindow):
 
         self.pkg_available = {}
         self.pkg_installed = {}
+
+        # Holders of data
+        self.__installed_packages = {}
+        self.__bodhi_updates = {}
+
 
         # Connects
         self.ui.actionQuit.triggered.connect(QtCore.QCoreApplication.instance().quit)
@@ -82,15 +94,35 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.treeWidget_test_cases.itemClicked.connect(self.__show_testcase_in_browser)
         self.ui.karmaCheckBox.stateChanged.connect(self.__filter_already_submitted)
 
-        self.pkg_worker = PackagesWorker()
+        # Prepare threads
+        self.bodhi_workers = []
+        for i in range(self.__BODHI_WORKERS_COUNT):
+            b = BodhiWorker(self.bodhi_workers_queue)
+            b.bodhi_query_done.connect(self.__bodhi_add_update)
+            b.start()
+            self.bodhi_workers.append(b)
+
+        self.pkg_worker = PackagesWorker(self.pkg_worker_queue, self.bodhi_workers_queue)
+        self.pkg_worker.set_installed_packages.connect(self.__set_installed_packages)
+        self.pkg_worker.start()
+
+        # Pkg worker threads
         self.pkg_worker.load_available_packages_done.connect(self.__save_available_pkg_list)
         self.pkg_worker.load_available_packages_start.connect(self.__available_pkg_list_loading_info)
         self.pkg_worker.load_installed_packages_done.connect(self.__save_installed_pkg_list)
         self.pkg_worker.load_installed_packages_start.connect(self.__installed_pkg_list_loading_info)
-    
+
+    def __bodhi_add_update(self, bodhi_update):
+        self.__bodhi_updates[bodhi_update['itemlist_name']] = bodhi_update
+        self.ui.pkgList.addItem(bodhi_update['itemlist_name'])
+
+    def __set_installed_packages(self, packages):
+        print str(len(packages)) + " installed packages on system."
+        self.__installed_packages = packages
+
     def __load_and_set_fedora_releases(self):
         # Load fedora-release version
-        pkgs = Packages()
+        pkgs = Packages(self.bodhi_workers_queue)
         fedora_release = pkgs.get_package_info('fedora-release')
 
         # Fill in current release as first
@@ -104,14 +136,11 @@ class MainWindow(QtGui.QMainWindow):
 
             self.ui.releaseComboBox.addItem(release)
 
-
     def __start_pkg_worker(self):
-        if self.pkg_worker.isRunning():
-            # don't start another pkg_worker while another has been already
-            return
+        # Get release and put it to queue
+        # Package worker will get info about it
         releasever = self.ui.releaseComboBox.currentText().split()[-1]
-        self.pkg_worker.set_release(releasever)
-        self.pkg_worker.start()
+        self.pkg_worker_queue.put(releasever)
 
     def __available_pkg_list_loading_info(self):
         release = self.ui.releaseComboBox.currentText()
@@ -198,12 +227,12 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.searchEdit.setEnabled(True)
 
     def __save_installed_pkg_list(self, pkg_object):
-        self.pkg_installed[pkg_object[0]] = pkg_object[1]
-        releasever = self.ui.releaseComboBox.currentText().split()[-1]
-        if releasever == pkg_object[0]:
-            self.ui.installedBtn.setChecked(True)
-            self.__show_installed()
-        self.ui.statusBar.clearMessage()
+        #self.pkg_installed[pkg_object[0]] = pkg_object[1]
+        #releasever = self.ui.releaseComboBox.currentText().split()[-1]
+        #if releasever == pkg_object[0]:
+        #    self.ui.installedBtn.setChecked(True)
+        #    self.__show_installed()
+        #self.ui.statusBar.clearMessage()
         message = "All installed packages has been loaded. [Fedora %s]" % pkg_object[0]
         self.ui.statusBar.showMessage(message)
         self.ui.searchEdit.setEnabled(True)
@@ -364,11 +393,13 @@ class MainWindow(QtGui.QMainWindow):
         """
         if pkg_item is None:
             return
-        data = self.__get_current_set().testing_builds[pkg_item.text()]
+
         text_browser_string = ""
+        bodhi_update = self.__bodhi_updates[pkg_item.text()]
 
         ## title
-        self.ui.pkgNameLabel.setText(data['builds'][0]['nvr'])
+        #self.ui.pkgNameLabel.setText(data['builds'][0]['nvr'])
+        self.ui.pkgNameLabel.setText(bodhi_update['itemlist_name'])
 
         ## yum info
         yum_values = {}
@@ -390,21 +421,14 @@ class MainWindow(QtGui.QMainWindow):
             "%(description)s\n\n"
         )
 
-        yum_pkg_list = []
-        yum_pkg_deplist = None
-        for item in self.__get_current_set().builds:
-            if pkg_item.text() == item['nvr']:
-                yum_pkg_list = yum_pkg_deplist = self.yb.pkgSack.searchNames([item['name']])
+        # Search for package in list of installed packages
         yum_pkg = None
-        # pick one package which fits the best
-        if len(yum_pkg_list) == 1:
-            yum_pkg = yum_pkg_list[0]
-        elif len(yum_pkg_list) > 1:
-            for yum_pkg_item in yum_pkg_list:
-                if yum_pkg_item.nvr == pkg_item.text():
-                    yum_pkg = yum_pkg_item
-            if yum_pkg is None:
-                yum_pkg = yum_pkg_list[0]
+        yum_pkg_deplist = None
+
+        for yum_pkg in self.__installed_packages:
+            if yum_pkg.nvr == pkg_item.text():
+                break
+
         if yum_pkg is not None:
             # if we got yum package
             # fetch info from yum_pkg
@@ -431,7 +455,7 @@ class MainWindow(QtGui.QMainWindow):
 
             try:
                 deplist = self.yb.findDeps(yum_pkg_deplist)
-            except Errors.NoMoreMirrorsRepoError, e:
+            except Exception, e:
                 print "_show_package_detail() error: %s" % e
 
             for key in deplist:
@@ -440,6 +464,9 @@ class MainWindow(QtGui.QMainWindow):
                     pkg = QtGui.QTreeWidgetItem()
                     pkg.setText(0, str(pkg_name))
                     self.ui.treeWidget_related_packages.insertTopLevelItem(0, pkg)
+
+        else:
+            print "Not in installed packages"
 
         ## bodhi info
         bodhi_values = {}
@@ -458,38 +485,40 @@ class MainWindow(QtGui.QMainWindow):
             "          Karma: %(karma)s\n"
             "   Stable Karma: %(stable_karma)s\n"
             " Unstable Karma: %(unstable_karma)s\n\n"
+            "            URL: %(bodhi_url)s\n\n"
             "        Details:\n"
             "        --------\n\n"
             "%(notes)s\n"
         )
 
-        bodhi_values['status'] = data['status']
-        bodhi_values['release'] = data['release']['long_name']
-        bodhi_values['updateid'] = data['updateid']
-        builds_list = self.__get_current_set().get_builds(data)
+        bodhi_values['status'] = bodhi_update['status']
+        bodhi_values['release'] = bodhi_update['release']['long_name']
+        bodhi_values['updateid'] = bodhi_update['updateid']
+        builds_list = bodhi_update['builds']
         if len(builds_list):
             build_num = 0
             builds_string = ""
             for build_item in builds_list:
                 if not build_num:
                     # first build name
-                    builds_string += "%s\n" % build_item
+                    builds_string += "%s\n" % build_item['nvr']
                 else:
                     # second and next builds
-                    builds_string += "%s%s\n" % (17 * " ", build_item)
+                    builds_string += "%s%s\n" % (17 * " ", build_item['nvr'])
                 build_num += 1
             bodhi_values['builds'] = builds_string
         else:
             bodhi_values['builds'] = "None"
-        bodhi_values['request'] = data['request']
-        bodhi_values['pushed'] = "True" if data['date_pushed'] else "False"
-        bodhi_values['date_submitted'] = data['date_submitted']
-        bodhi_values['date_released'] = data['date_pushed']
-        bodhi_values['submitter'] = data['submitter']
-        bodhi_values['karma'] = data['karma']
-        bodhi_values['stable_karma'] = data['stable_karma']
-        bodhi_values['unstable_karma'] = data['unstable_karma']
-        bodhi_values['notes'] = data['notes']
+        bodhi_values['request'] = bodhi_update['request']
+        bodhi_values['pushed'] = "True" if bodhi_update['date_pushed'] else "False"
+        bodhi_values['date_submitted'] = bodhi_update['date_submitted']
+        bodhi_values['date_released'] = bodhi_update['date_pushed']
+        bodhi_values['submitter'] = bodhi_update['submitter']
+        bodhi_values['karma'] = bodhi_update['karma']
+        bodhi_values['stable_karma'] = bodhi_update['stable_karma']
+        bodhi_values['unstable_karma'] = bodhi_update['unstable_karma']
+        bodhi_values['notes'] = bodhi_update['notes']
+        bodhi_values['bodhi_url'] = bodhi_update['bodhi_url']
         # decode all strings found in bodhi_values to utf-8
         self.__decode_dict(bodhi_values)
         # map fetched bodhi info on the bodhi_format_string
@@ -500,17 +529,16 @@ class MainWindow(QtGui.QMainWindow):
 
         ## bugs
         self.ui.treeWidget_bugs.clear()
-        bugs = self.__get_current_set().get_bugs(data)
-        if bugs:
-            for key in bugs:
+        if bodhi_update['bugs_by_id']:
+            for key in bodhi_update['bugs_by_id']:
                 bug = QtGui.QTreeWidgetItem()
                 bug.setText(0, str(key))
-                bug.setText(1, str(bugs[key]))
+                bug.setText(1, str(bodhi_update['bugs_by_id'][key]))
                 self.ui.treeWidget_bugs.insertTopLevelItem(0, bug)
 
         ## test cases
         self.ui.treeWidget_test_cases.clear()
-        test_cases_list = self.__get_current_set().get_test_cases(data)
+        test_cases_list = bodhi_update['test_cases']
         if len(test_cases_list):
             for test_case_item in reversed(test_cases_list):
                 tc = QtGui.QTreeWidgetItem()
@@ -519,7 +547,7 @@ class MainWindow(QtGui.QMainWindow):
 
         ## feedback
         self.ui.treeWidget_feedback.clear()
-        comments = self.__get_current_set().get_comments(data)
+        comments = bodhi_update['formatted_comments']
         if comments:
             for i in comments:
                 comment = QtGui.QTreeWidgetItem()
@@ -542,11 +570,21 @@ class MainWindow(QtGui.QMainWindow):
                 return item.text()
             index += 1
 
+    def exit_threads(self):
+        if not self.pkg_worker.isRunning():
+            self.pkg_worker.exit()
+
+        for i in range(self.__BODHI_WORKERS_COUNT):
+            if not self.bodhi_workers[i].isRunning():
+                self.bodhi_workers[i].exit()
+
 def main():
     app = QtGui.QApplication(sys.argv)
     win = MainWindow()
     win.show()
-    sys.exit(app.exec_())
+    ret = app.exec_()
+    win.exit_threads()
+    sys.exit()
 
 if __name__ == "__main__":
     main()

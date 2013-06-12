@@ -55,7 +55,7 @@
               <bool>true</bool>
              </property>
              <property name="checked">
-              <bool>false</bool>
+              <bool>true</bool>
              </property>
              <property name="autoDefault">
               <bool>false</bool>

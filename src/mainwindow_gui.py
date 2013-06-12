@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui/mainwindow.ui'
 #
-# Created: Sat Jun  8 02:06:40 2013
+# Created: Wed Jun 12 22:48:05 2013
 #      by: pyside-uic 0.2.13 running on PySide 1.1.0
 #
 # WARNING! All changes made in this file will be lost!
@@ -37,7 +37,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.installedBtn = QtGui.QPushButton(self.pkgLists)
         self.installedBtn.setCheckable(True)
-        self.installedBtn.setChecked(False)
+        self.installedBtn.setChecked(True)
         self.installedBtn.setAutoDefault(False)
         self.installedBtn.setDefault(False)
         self.installedBtn.setFlat(False)

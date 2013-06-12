@@ -4,7 +4,7 @@
 #    Fedora Gooey Karma prototype
 #    based on the https://github.com/mkrizek/fedora-gooey-karma
 #
-#    Copyright (C) 2013 Tomas Meszaros
+#    Copyright (C) 2013 
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -24,6 +24,8 @@
 
 import yum
 import rpm
+import datetime
+import multiprocessing
 from fedora.client.bodhi import BodhiClient
 from yum.misc import getCacheDir
 
@@ -40,9 +42,10 @@ class Packages(object):
         testing_builds: A dictionary containing Bodhi client query output for earch package
     """
 
-    def __init__(self):
+    def __init__(self, bodhi_workers_queue):
         bodhi_url = 'https://admin.fedoraproject.org/updates/'
-        self.bc = BodhiClient(bodhi_url, debug=None)
+        self.bc = BodhiClient(bodhi_url, useragent="Fedora Gooey Karma", debug=None)
+        self.bodhi_workers_queue = bodhi_workers_queue
         
         # Yum Base
         self.yb = yum.YumBase()
@@ -171,7 +174,9 @@ class Packages(object):
     def __bodhi_query_pkg(self, conn, installed_updates_testing, releasever):
         release_short = "%s%s" % ("F", releasever)
         for package in installed_updates_testing:
+            print "Starting " + package
             pkg_update = self.bc.query(release=release_short, package=package)['updates']
+            print package
             if pkg_update:
                 for update in pkg_update:
                     for build in update['builds']:
@@ -181,6 +186,7 @@ class Packages(object):
                                                 'name': build['package']['name'],
                                                 'installed': True})
         conn.send([self.builds, self.testing_builds])
+        #return [self.builds, self.testing_builds]
 
 
     def load_installed(self, releasever):
@@ -195,13 +201,28 @@ class Packages(object):
             releasever: Fedora release version number (e.g. 18).
         """
         installed_packages = self.yb.rpmdb.returnPackages()
+        print str(len(installed_packages)) + " installed packages on system."
+        installed_packages_count = len(installed_packages)
         installed_updates_testing = []
+        
+        # Prepare days
+        # TODO: grab it from GUI, not constant
+        now = datetime.datetime.now()
+        max_days = 10
+        installed_max_days = datetime.timedelta(max_days)
+
         for pkg in installed_packages:
-            # get Fedora release shortcut (e.g. fc18)
+            # Get Fedora release shortcut (e.g. fc18)
             rel = pkg.release.split('.')[-1]
-            if rel.startswith('fc') and releasever in rel:
-                if pkg.ui_from_repo == '@updates-testing':
-                    installed_updates_testing.append(pkg.nvr)
+            # We want just packages newer than XY days
+            installed = datetime.datetime.fromtimestamp(pkg.installtime)
+            installed_timedelta = now - installed
+            if installed_timedelta < installed_max_days:
+                if rel.startswith('fc') and releasever in rel:
+                    if pkg.ui_from_repo == '@updates-testing':
+                        self.bodhi_workers_queue.put(pkg)
+
+        return
 
         # split installed_updates_testing to four chunks
         # each Process will process one quarter
