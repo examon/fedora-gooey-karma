@@ -28,6 +28,7 @@ import webbrowser
 import yum
 import multiprocessing
 import Queue
+import rpm
 from fedora.client import AuthError
 from fedora.client import ServerError
 from fedora.client.bodhi import BodhiClient
@@ -39,9 +40,6 @@ from PySide import QtGui
 from mainwindow_gui import Ui_MainWindow
 from packagesworker import PackagesWorker 
 from bodhiworker import BodhiWorker
-from packages import Packages
-
-
 
 class MainWindow(QtGui.QMainWindow):
 
@@ -61,6 +59,7 @@ class MainWindow(QtGui.QMainWindow):
         self.pkg_worker_queue = Queue.Queue()
 
         # Prepare ui
+        self.rpmTS = rpm.TransactionSet()
         self.__show_karma_widget_comment()
         self.__hide_karma_name_filter()
         self.__load_and_set_fedora_releases()
@@ -122,16 +121,17 @@ class MainWindow(QtGui.QMainWindow):
 
     def __load_and_set_fedora_releases(self):
         # Load fedora-release version
-        pkgs = Packages(self.bodhi_workers_queue)
-        fedora_release = pkgs.get_package_info('fedora-release')
+        packages = self.rpmTS.dbMatch('name', 'fedora-release')
+        for package in packages:
+            break
 
         # Fill in current release as first
-        self.ui.releaseComboBox.addItem('Fedora ' + str(fedora_release[0]['version']))
+        self.ui.releaseComboBox.addItem('Fedora ' + str(package['version']))
 
         # Fill combo box
         for release in self.__FEDORA_RELEASES:
             # Skip current release 
-            if fedora_release[0]['version'] == release.split()[-1]:
+            if package['version'] == release.split()[-1]:
                 continue
 
             self.ui.releaseComboBox.addItem(release)
@@ -193,28 +193,6 @@ class MainWindow(QtGui.QMainWindow):
                 elif self.ui.availableBtn.isChecked():
                     self.ui.pkgList.addItem(build['nvr'])
 
-    def __get_current_set(self):
-        """ Returns installed or available pkg object.
-        Depends which one is used at the moment.
-        """
-        releasever = self.ui.releaseComboBox.currentText().split()[-1]
-        if self.ui.availableBtn.isChecked():
-            try:
-                return self.pkg_available[releasever]
-            except AttributeError, e:
-                print "pkg_available is not ready: %s" % e
-            except KeyError, e:
-                print "pkg_available is not ready: %s" % e
-        elif self.ui.installedBtn.isChecked():
-            try:
-                return self.pkg_installed[releasever]
-            except AttributeError, e:
-                print "pkg_installed is not ready: %s" % e
-            except KeyError, e:
-                print "pkg_installed is not ready: %s" % e
-        else:
-            raise ValueError("Could not return pkg_available or pkg_installed.")
-
     def __save_available_pkg_list(self, pkg_object):
         self.pkg_available[pkg_object[0]] = pkg_object[1]
         releasever = self.ui.releaseComboBox.currentText().split()[-1]
@@ -227,12 +205,6 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.searchEdit.setEnabled(True)
 
     def __save_installed_pkg_list(self, pkg_object):
-        #self.pkg_installed[pkg_object[0]] = pkg_object[1]
-        #releasever = self.ui.releaseComboBox.currentText().split()[-1]
-        #if releasever == pkg_object[0]:
-        #    self.ui.installedBtn.setChecked(True)
-        #    self.__show_installed()
-        #self.ui.statusBar.clearMessage()
         message = "All installed packages has been loaded. [Fedora %s]" % pkg_object[0]
         self.ui.statusBar.showMessage(message)
         self.ui.searchEdit.setEnabled(True)

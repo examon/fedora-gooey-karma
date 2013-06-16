@@ -84,13 +84,6 @@ class PackagesWorker(QtCore.QThread):
             self.bodhi_workers_queue.join()
             self.load_installed_packages_done.emit(releasever)
 
-            """
-            self.load_available_packages_start.emit(self)
-            __packages_available = Packages()
-            __packages_available.load_available(releasever)
-            self.load_available_packages_done.emit((releasever, __packages_available))
-            print "available done"
-            """
             self.queue.task_done()
 
     def load_installed(self, releasever):
