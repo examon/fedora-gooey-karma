@@ -205,7 +205,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.searchEdit.setEnabled(True)
 
     def __save_installed_pkg_list(self, pkg_object):
-        message = "All installed packages has been loaded. [Fedora %s]" % pkg_object[0]
+        message = "All installed packages has been loaded. [Fedora %s]" % pkg_object
         self.ui.statusBar.showMessage(message)
         self.ui.searchEdit.setEnabled(True)
 
