@@ -29,8 +29,6 @@ from PySide import QtCore
 from fedora.client import BodhiClient
 from yum.misc import getCacheDir
 
-from packages import Packages
-
 class PackagesWorker(QtCore.QThread):
     """Worker class used for new thread.
 
