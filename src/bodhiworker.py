@@ -104,13 +104,18 @@ class BodhiWorker(QtCore.QThread):
                       comments = [ ["Feedback string", "author nickname", int(karma)], ... ]
         """
         comments = []
+        i = 1
         if len(data['comments']):
             for comment in data['comments']:
                 anonymous = ""
                 if comment['anonymous']:
                     anonymous = " (unauthenticated)"
-                comments.append([comment['text'], comment['author'] + anonymous,
-                                comment['karma']])
+                comments.append({'ord':i,
+                                 'text':comment['text'],
+                                 'author':comment['author'] + anonymous,
+                                 'karma':comment['karma']})
+                i = i + 1
+
         return comments
 
 # vim: set expandtab ts=4 sts=4 sw=4 :

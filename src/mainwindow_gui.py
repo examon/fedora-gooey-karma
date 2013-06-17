@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui/mainwindow.ui'
 #
-# Created: Wed Jun 12 22:48:05 2013
+# Created: Mon Jun 17 20:34:20 2013
 #      by: pyside-uic 0.2.13 running on PySide 1.1.0
 #
 # WARNING! All changes made in this file will be lost!
@@ -126,6 +126,7 @@ class Ui_MainWindow(object):
         self.treeWidget_feedback = QtGui.QTreeWidget(self.centralwidget)
         self.treeWidget_feedback.setMinimumSize(QtCore.QSize(0, 0))
         self.treeWidget_feedback.setRootIsDecorated(False)
+        self.treeWidget_feedback.setUniformRowHeights(False)
         self.treeWidget_feedback.setObjectName("treeWidget_feedback")
         self.treeWidget_feedback.header().setCascadingSectionResizes(False)
         self.treeWidget_feedback.header().setMinimumSectionSize(30)
@@ -212,9 +213,11 @@ class Ui_MainWindow(object):
         self.treeWidget_bugs.headerItem().setText(1, QtGui.QApplication.translate("MainWindow", "Title", None, QtGui.QApplication.UnicodeUTF8))
         self.treeWidget_test_cases.headerItem().setText(0, QtGui.QApplication.translate("MainWindow", "Test cases", None, QtGui.QApplication.UnicodeUTF8))
         self.treeWidget_related_packages.headerItem().setText(0, QtGui.QApplication.translate("MainWindow", "Related packages", None, QtGui.QApplication.UnicodeUTF8))
-        self.treeWidget_feedback.headerItem().setText(0, QtGui.QApplication.translate("MainWindow", "Karma", None, QtGui.QApplication.UnicodeUTF8))
-        self.treeWidget_feedback.headerItem().setText(1, QtGui.QApplication.translate("MainWindow", "User", None, QtGui.QApplication.UnicodeUTF8))
-        self.treeWidget_feedback.headerItem().setText(2, QtGui.QApplication.translate("MainWindow", "Comment", None, QtGui.QApplication.UnicodeUTF8))
+        self.treeWidget_feedback.setSortingEnabled(True)
+        self.treeWidget_feedback.headerItem().setText(0, QtGui.QApplication.translate("MainWindow", "#", None, QtGui.QApplication.UnicodeUTF8))
+        self.treeWidget_feedback.headerItem().setText(1, QtGui.QApplication.translate("MainWindow", "Karma", None, QtGui.QApplication.UnicodeUTF8))
+        self.treeWidget_feedback.headerItem().setText(2, QtGui.QApplication.translate("MainWindow", "User", None, QtGui.QApplication.UnicodeUTF8))
+        self.treeWidget_feedback.headerItem().setText(3, QtGui.QApplication.translate("MainWindow", "Comment", None, QtGui.QApplication.UnicodeUTF8))
         self.usernameEdit.setPlaceholderText(QtGui.QApplication.translate("MainWindow", "username", None, QtGui.QApplication.UnicodeUTF8))
         self.passwordEdit.setPlaceholderText(QtGui.QApplication.translate("MainWindow", "password", None, QtGui.QApplication.UnicodeUTF8))
         self.okBtn.setText(QtGui.QApplication.translate("MainWindow", "OK", None, QtGui.QApplication.UnicodeUTF8))

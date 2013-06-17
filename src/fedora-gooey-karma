@@ -40,9 +40,11 @@ from yum import Errors
 from PySide import QtCore
 from PySide import QtGui
 
+from customgui import CustomTreeWidgetItem
 from mainwindow_gui import Ui_MainWindow
 from packagesworker import PackagesWorker 
 from bodhiworker import BodhiWorker
+
 
 class MainWindow(QtGui.QMainWindow):
 
@@ -52,12 +54,11 @@ class MainWindow(QtGui.QMainWindow):
     __BODHI_WORKERS_COUNT = 15
 
     def __init__(self, parent=None):
-
-
         # GUI
         super(MainWindow, self).__init__(parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+
 
         # Prepare Queues
         self.bodhi_workers_queue = Queue.Queue()
@@ -80,7 +81,6 @@ class MainWindow(QtGui.QMainWindow):
         # Holders of data
         self.__installed_packages = {}
         self.__bodhi_updates = {}
-
 
         # Connects
         self.ui.actionQuit.triggered.connect(QtCore.QCoreApplication.instance().quit)
@@ -115,6 +115,7 @@ class MainWindow(QtGui.QMainWindow):
         self.pkg_worker.load_available_packages_start.connect(self.__available_pkg_list_loading_info)
         self.pkg_worker.load_installed_packages_done.connect(self.__save_installed_pkg_list)
         self.pkg_worker.load_installed_packages_start.connect(self.__installed_pkg_list_loading_info)
+    
 
     def __bodhi_add_update(self, bodhi_update):
         self.__bodhi_updates[bodhi_update['itemlist_name']] = bodhi_update
@@ -527,10 +528,11 @@ class MainWindow(QtGui.QMainWindow):
         comments = bodhi_update['formatted_comments']
         if comments:
             for i in comments:
-                comment = QtGui.QTreeWidgetItem()
-                comment.setText(0, str(i[2]))
-                comment.setText(1, i[1])
-                comment.setText(2, i[0])
+                comment = CustomTreeWidgetItem()
+                comment.setText(0, str(i['ord']))
+                comment.setText(1, str(i['karma']))
+                comment.setText(2, i['author'])
+                comment.setText(3, i['text'])
                 self.ui.treeWidget_feedback.insertTopLevelItem(0, comment)
 
     def __activated_pkgList_item_text(self):

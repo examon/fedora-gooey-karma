@@ -264,6 +264,12 @@ p, li { white-space: pre-wrap; }
           <property name="rootIsDecorated">
            <bool>false</bool>
           </property>
+          <property name="uniformRowHeights">
+           <bool>false</bool>
+          </property>
+          <property name="sortingEnabled">
+           <bool>true</bool>
+          </property>
           <attribute name="headerCascadingSectionResizes">
            <bool>false</bool>
           </attribute>
@@ -272,12 +278,26 @@ p, li { white-space: pre-wrap; }
           </attribute>
           <column>
            <property name="text">
+            <string>#</string>
+           </property>
+           <property name="textAlignment">
+            <set>AlignRight|AlignVCenter</set>
+           </property>
+          </column>
+          <column>
+           <property name="text">
             <string>Karma</string>
            </property>
           </column>
           <column>
            <property name="text">
             <string>User</string>
+           </property>
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
            </property>
           </column>
           <column>

@@ -74,7 +74,6 @@ class PackagesWorker(QtCore.QThread):
         while True:
             releasever = self.queue.get()
             
-            print "Starting Packages worker for F" + str(releasever)
             """Calls load_installed and load_available, when done, emits corresponding signals.
             """
             self.load_installed_packages_start.emit(self)
