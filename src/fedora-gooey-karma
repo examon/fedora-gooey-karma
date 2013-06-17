@@ -22,8 +22,11 @@
 #    Author: Branislav Blaskovic <branislav@blaskovic.sk>
 #    Author: Tomas Meszaros <exo@tty.sk>
 
-
+import os
 import sys
+
+sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '../share/fedora-gooey-karma'))
+
 import webbrowser
 import yum
 import multiprocessing
@@ -49,6 +52,8 @@ class MainWindow(QtGui.QMainWindow):
     __BODHI_WORKERS_COUNT = 15
 
     def __init__(self, parent=None):
+
+
         # GUI
         super(MainWindow, self).__init__(parent)
         self.ui = Ui_MainWindow()
