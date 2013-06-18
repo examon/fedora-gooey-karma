@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui/mainwindow.ui'
 #
-# Created: Thu Apr 25 08:41:48 2013
+# Created: Mon Jun 17 20:34:20 2013
 #      by: pyside-uic 0.2.13 running on PySide 1.1.0
 #
 # WARNING! All changes made in this file will be lost!
@@ -37,7 +37,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.installedBtn = QtGui.QPushButton(self.pkgLists)
         self.installedBtn.setCheckable(True)
-        self.installedBtn.setChecked(False)
+        self.installedBtn.setChecked(True)
         self.installedBtn.setAutoDefault(False)
         self.installedBtn.setDefault(False)
         self.installedBtn.setFlat(False)
@@ -72,9 +72,6 @@ class Ui_MainWindow(object):
         self.horizontalLayout_5.setObjectName("horizontalLayout_5")
         self.releaseComboBox = QtGui.QComboBox(self.pkgLists)
         self.releaseComboBox.setObjectName("releaseComboBox")
-        self.releaseComboBox.addItem("")
-        self.releaseComboBox.addItem("")
-        self.releaseComboBox.addItem("")
         self.horizontalLayout_5.addWidget(self.releaseComboBox)
         self.loadPackagesBtn = QtGui.QPushButton(self.pkgLists)
         self.loadPackagesBtn.setObjectName("loadPackagesBtn")
@@ -129,6 +126,7 @@ class Ui_MainWindow(object):
         self.treeWidget_feedback = QtGui.QTreeWidget(self.centralwidget)
         self.treeWidget_feedback.setMinimumSize(QtCore.QSize(0, 0))
         self.treeWidget_feedback.setRootIsDecorated(False)
+        self.treeWidget_feedback.setUniformRowHeights(False)
         self.treeWidget_feedback.setObjectName("treeWidget_feedback")
         self.treeWidget_feedback.header().setCascadingSectionResizes(False)
         self.treeWidget_feedback.header().setMinimumSectionSize(30)
@@ -179,7 +177,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.addWidget(self.karmaWidget)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtGui.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 996, 21))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 996, 23))
         self.menubar.setObjectName("menubar")
         self.menuFile = QtGui.QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")
@@ -204,9 +202,6 @@ class Ui_MainWindow(object):
         self.pkgList.setSortingEnabled(True)
         self.karmaCheckBox.setText(QtGui.QApplication.translate("MainWindow", "Karma not submitted", None, QtGui.QApplication.UnicodeUTF8))
         self.karmaUsernameEdit.setPlaceholderText(QtGui.QApplication.translate("MainWindow", "username", None, QtGui.QApplication.UnicodeUTF8))
-        self.releaseComboBox.setItemText(0, QtGui.QApplication.translate("MainWindow", "Fedora 19", None, QtGui.QApplication.UnicodeUTF8))
-        self.releaseComboBox.setItemText(1, QtGui.QApplication.translate("MainWindow", "Fedora 18", None, QtGui.QApplication.UnicodeUTF8))
-        self.releaseComboBox.setItemText(2, QtGui.QApplication.translate("MainWindow", "Fedora 17", None, QtGui.QApplication.UnicodeUTF8))
         self.loadPackagesBtn.setText(QtGui.QApplication.translate("MainWindow", "Load Packages", None, QtGui.QApplication.UnicodeUTF8))
         self.pkgNameLabel.setText(QtGui.QApplication.translate("MainWindow", "Package name", None, QtGui.QApplication.UnicodeUTF8))
         self.textBrowser.setHtml(QtGui.QApplication.translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
@@ -218,9 +213,11 @@ class Ui_MainWindow(object):
         self.treeWidget_bugs.headerItem().setText(1, QtGui.QApplication.translate("MainWindow", "Title", None, QtGui.QApplication.UnicodeUTF8))
         self.treeWidget_test_cases.headerItem().setText(0, QtGui.QApplication.translate("MainWindow", "Test cases", None, QtGui.QApplication.UnicodeUTF8))
         self.treeWidget_related_packages.headerItem().setText(0, QtGui.QApplication.translate("MainWindow", "Related packages", None, QtGui.QApplication.UnicodeUTF8))
-        self.treeWidget_feedback.headerItem().setText(0, QtGui.QApplication.translate("MainWindow", "Karma", None, QtGui.QApplication.UnicodeUTF8))
-        self.treeWidget_feedback.headerItem().setText(1, QtGui.QApplication.translate("MainWindow", "User", None, QtGui.QApplication.UnicodeUTF8))
-        self.treeWidget_feedback.headerItem().setText(2, QtGui.QApplication.translate("MainWindow", "Comment", None, QtGui.QApplication.UnicodeUTF8))
+        self.treeWidget_feedback.setSortingEnabled(True)
+        self.treeWidget_feedback.headerItem().setText(0, QtGui.QApplication.translate("MainWindow", "#", None, QtGui.QApplication.UnicodeUTF8))
+        self.treeWidget_feedback.headerItem().setText(1, QtGui.QApplication.translate("MainWindow", "Karma", None, QtGui.QApplication.UnicodeUTF8))
+        self.treeWidget_feedback.headerItem().setText(2, QtGui.QApplication.translate("MainWindow", "User", None, QtGui.QApplication.UnicodeUTF8))
+        self.treeWidget_feedback.headerItem().setText(3, QtGui.QApplication.translate("MainWindow", "Comment", None, QtGui.QApplication.UnicodeUTF8))
         self.usernameEdit.setPlaceholderText(QtGui.QApplication.translate("MainWindow", "username", None, QtGui.QApplication.UnicodeUTF8))
         self.passwordEdit.setPlaceholderText(QtGui.QApplication.translate("MainWindow", "password", None, QtGui.QApplication.UnicodeUTF8))
         self.okBtn.setText(QtGui.QApplication.translate("MainWindow", "OK", None, QtGui.QApplication.UnicodeUTF8))

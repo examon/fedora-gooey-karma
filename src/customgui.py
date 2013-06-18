@@ -1,10 +1,10 @@
-#!/usr/bin/python -tt
+#!/usr/bin/python2 -tt
 # -*- coding:  utf-8 -*-
 
 #    Fedora Gooey Karma prototype
 #    based on the https://github.com/mkrizek/fedora-gooey-karma
 #
-#    Copyright (C) 2013 Tomas Meszaros
+#    Copyright (C) 2013 
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -19,6 +19,19 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-#    Author: Tomas Meszaros <exo@tty.sk>
+#    Author: Branislav Blaskovic <branislav@blaskovic.sk>
 
-import src
+from PySide import QtGui
+
+class CustomTreeWidgetItem(QtGui.QTreeWidgetItem):
+    def __init__(self, parent=None):
+        QtGui.QTreeWidgetItem.__init__(self, parent)
+
+    def __lt__(self, otherItem):
+        column = self.treeWidget().sortColumn()
+        try:
+            return float( self.text(column) ) > float( otherItem.text(column) )
+        except ValueError:
+            return self.text(column) > otherItem.text(column)
+
+# vim: set expandtab ts=4 sts=4 sw=4 :

@@ -55,7 +55,7 @@
               <bool>true</bool>
              </property>
              <property name="checked">
-              <bool>false</bool>
+              <bool>true</bool>
              </property>
              <property name="autoDefault">
               <bool>false</bool>
@@ -129,23 +129,7 @@
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_5">
            <item>
-            <widget class="QComboBox" name="releaseComboBox">
-             <item>
-              <property name="text">
-               <string>Fedora 19</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Fedora 18</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
-               <string>Fedora 17</string>
-              </property>
-             </item>
-            </widget>
+            <widget class="QComboBox" name="releaseComboBox"/>
            </item>
            <item>
             <widget class="QPushButton" name="loadPackagesBtn">
@@ -280,6 +264,12 @@ p, li { white-space: pre-wrap; }
           <property name="rootIsDecorated">
            <bool>false</bool>
           </property>
+          <property name="uniformRowHeights">
+           <bool>false</bool>
+          </property>
+          <property name="sortingEnabled">
+           <bool>true</bool>
+          </property>
           <attribute name="headerCascadingSectionResizes">
            <bool>false</bool>
           </attribute>
@@ -288,12 +278,26 @@ p, li { white-space: pre-wrap; }
           </attribute>
           <column>
            <property name="text">
+            <string>#</string>
+           </property>
+           <property name="textAlignment">
+            <set>AlignRight|AlignVCenter</set>
+           </property>
+          </column>
+          <column>
+           <property name="text">
             <string>Karma</string>
            </property>
           </column>
           <column>
            <property name="text">
             <string>User</string>
+           </property>
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
            </property>
           </column>
           <column>
@@ -401,7 +405,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>996</width>
-     <height>21</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
