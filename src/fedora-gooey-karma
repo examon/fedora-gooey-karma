@@ -94,8 +94,8 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.cancelBtn.clicked.connect(self.__show_karma_widget_comment)
         self.ui.loadPackagesBtn.clicked.connect(self.__start_pkg_worker)
         self.ui.releaseComboBox.currentIndexChanged.connect(self.__refresh_package_list)
-        self.ui.treeWidget_bugs.itemClicked.connect(self.__show_bug_in_browser)
-        self.ui.treeWidget_test_cases.itemClicked.connect(self.__show_testcase_in_browser)
+        self.ui.treeWidget_bugs.itemDoubleClicked.connect(self.__show_bug_in_browser)
+        self.ui.treeWidget_test_cases.itemDoubleClicked.connect(self.__show_testcase_in_browser)
         self.ui.karmaCheckBox.stateChanged.connect(self.__filter_already_submitted)
 
         # Prepare threads

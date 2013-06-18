@@ -33,3 +33,5 @@ class CustomTreeWidgetItem(QtGui.QTreeWidgetItem):
             return float( self.text(column) ) > float( otherItem.text(column) )
         except ValueError:
             return self.text(column) > otherItem.text(column)
+
+# vim: set expandtab ts=4 sts=4 sw=4 :
