@@ -7,13 +7,13 @@ TODO
 * add support for installing and deleting packages
   - some buttons next to the package name could be nice
 
-* refractor
+* refractor [done]
   - split mainwindow.py into several files
 
 * improve FAS integration
   - login dialog at the start?
 
-* automatic release recognition
+* automatic release recognition [done]
   - the right release number should be selected automatically
 
 * improve GUI
