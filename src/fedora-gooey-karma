@@ -66,8 +66,6 @@ class MainWindow(QtGui.QMainWindow):
 
         # Prepare ui
         self.rpmTS = rpm.TransactionSet()
-        self.__show_karma_widget_comment()
-        self.__hide_karma_name_filter()
         self.__load_and_set_fedora_releases()
 
         # YumBase and cache
@@ -89,9 +87,6 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.karmaUsernameEdit.textChanged.connect(self.__filter_already_submitted)
         self.ui.installedBtn.clicked.connect(self.__show_installed)
         self.ui.availableBtn.clicked.connect(self.__show_available)
-        self.ui.sendBtn.clicked.connect(self.__show_karma_widget_auth)
-        self.ui.okBtn.clicked.connect(self.__send_comment)
-        self.ui.cancelBtn.clicked.connect(self.__show_karma_widget_comment)
         self.ui.loadPackagesBtn.clicked.connect(self.__start_pkg_worker)
         self.ui.releaseComboBox.currentIndexChanged.connect(self.__refresh_package_list)
         self.ui.treeWidget_bugs.itemDoubleClicked.connect(self.__show_bug_in_browser)
@@ -116,13 +111,16 @@ class MainWindow(QtGui.QMainWindow):
         self.pkg_worker.load_installed_packages_done.connect(self.__save_installed_pkg_list)
         self.pkg_worker.load_installed_packages_start.connect(self.__installed_pkg_list_loading_info)
     
+    def __add_status_item(self, item):
+        self.ui.statusList.insertItem(0, str(item))
 
     def __bodhi_add_update(self, bodhi_update):
         self.__bodhi_updates[bodhi_update['itemlist_name']] = bodhi_update
         self.ui.pkgList.addItem(bodhi_update['itemlist_name'])
+        self.__add_status_item(bodhi_update['itemlist_name'] + " added into Bodhi updates")
 
     def __set_installed_packages(self, packages):
-        print str(len(packages)) + " installed packages on system."
+        self.__add_status_item(str(len(packages)) + " installed packages on system")
         self.__installed_packages = packages
 
     def __load_and_set_fedora_releases(self):
@@ -220,28 +218,6 @@ class MainWindow(QtGui.QMainWindow):
             if isinstance(dictionary[key], data_type):
                 dictionary[key] = dictionary[key].decode(decoding)
 
-    def __show_karma_widget_auth(self):
-        self.ui.usernameEdit.show()
-        self.ui.usernameEdit.setFocus()
-        self.ui.passwordEdit.show()
-        self.ui.okBtn.show()
-        self.ui.cancelBtn.show()
-        self.ui.commentEdit.hide()
-        self.ui.karmaBox.hide()
-        self.ui.sendBtn.hide()
-        message = "Please enter FAS username and passowrd."
-        self.ui.statusBar.showMessage(message)
-
-    def __show_karma_widget_comment(self):
-        self.ui.usernameEdit.hide()
-        self.ui.passwordEdit.hide()
-        self.ui.okBtn.hide()
-        self.ui.cancelBtn.hide()
-        self.ui.commentEdit.show()
-        self.ui.karmaBox.show()
-        self.ui.sendBtn.show()
-        self.ui.statusBar.clearMessage()
-
     def __send_comment(self):
         comment = self.ui.commentEdit.text()
         karma = self.ui.karmaBox.currentText()
@@ -290,14 +266,6 @@ class MainWindow(QtGui.QMainWindow):
                 message = "Server error %s" % str(e)
                 self.ui.statusBar.showMessage(message)
 
-    def __show_karma_name_filter(self):
-        self.ui.karmaCheckBox.show()
-        self.ui.karmaUsernameEdit.show()
-
-    def __hide_karma_name_filter(self):
-        self.ui.karmaCheckBox.hide()
-        self.ui.karmaUsernameEdit.hide()
-
     def __filter_already_submitted(self):
         """ Add only those installed packages to the pkgList for which user did not
         submitted karma. (uses username from the karmaUsernameEdit)
@@ -330,10 +298,6 @@ class MainWindow(QtGui.QMainWindow):
                 self.ui.pkgList.addItem(build['nvr'])
 
     def __show_installed(self):
-        if self.ui.installedBtn.isChecked():
-            self.__show_karma_name_filter()
-        else:
-            self.__hide_karma_name_filter()
         self.ui.availableBtn.setChecked(False)
         if self.ui.installedBtn.isChecked():
             try:
@@ -346,7 +310,6 @@ class MainWindow(QtGui.QMainWindow):
             self.ui.pkgList.clear()
 
     def __show_available(self):
-        self.__hide_karma_name_filter()
         self.ui.installedBtn.setChecked(False)
         if self.ui.availableBtn.isChecked():
             try:
