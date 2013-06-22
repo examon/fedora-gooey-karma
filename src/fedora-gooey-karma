@@ -505,10 +505,17 @@ class MainWindow(QtGui.QMainWindow):
         if comments:
             for i in comments:
                 comment = CustomTreeWidgetItem()
+                # Set vertical alignment to Top
+                comment.setTextAlignment(0, QtCore.Qt.AlignTop)
+                comment.setTextAlignment(1, QtCore.Qt.AlignTop)
+                comment.setTextAlignment(2, QtCore.Qt.AlignTop)
+                comment.setTextAlignment(3, QtCore.Qt.AlignTop)
+                # Fill it with text
                 comment.setText(0, str(i['ord']))
                 comment.setText(1, str(i['karma']))
                 comment.setText(2, i['author'])
                 comment.setText(3, i['text'])
+                comment.setToolTip(3, i['text'])
                 self.ui.treeWidget_feedback.insertTopLevelItem(0, comment)
 
     def exit_threads(self):
