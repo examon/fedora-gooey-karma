@@ -64,6 +64,7 @@ class BodhiWorker(QtCore.QThread):
                     # Does this build match with our current build?
                     if build['nvr'] == package.nvr:
                         update['itemlist_name'] = package.nvr
+                        update['yum_package'] = package
                         return update
 
         return None

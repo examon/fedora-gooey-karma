@@ -82,7 +82,6 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.actionQuit.triggered.connect(QtCore.QCoreApplication.instance().quit)
         self.ui.pkgList.currentItemChanged.connect(self.__show_package_detail)
         self.ui.searchEdit.textChanged.connect(self.__search_pkg)
-        self.ui.karmaUsernameEdit.textChanged.connect(self.__filter_already_submitted)
         self.ui.installedBtn.clicked.connect(self.__show_installed)
         self.ui.availableBtn.clicked.connect(self.__show_available)
         self.ui.loadPackagesBtn.clicked.connect(self.__start_pkg_worker)
@@ -90,6 +89,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.treeWidget_bugs.itemDoubleClicked.connect(self.__show_bug_in_browser)
         self.ui.treeWidget_test_cases.itemDoubleClicked.connect(self.__show_testcase_in_browser)
         self.ui.karmaCheckBox.stateChanged.connect(self.__filter_already_submitted)
+        self.ui.sendBtn.clicked.connect(self.__send_comment)
 
         # Prepare threads
         self.bodhi_workers = []
@@ -113,8 +113,18 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.statusList.insertItem(0, str(item))
 
     def __bodhi_add_update(self, bodhi_update):
-        self.__bodhi_updates[bodhi_update['itemlist_name']] = bodhi_update
+        # Is this package in list?
+        # If yes, remove it to add it again
+        for i in range(self.ui.pkgList.count()):
+            item = self.ui.pkgList.item(i)
+            if item.text() == bodhi_update['itemlist_name']:
+                self.ui.pkgList.takeItem(i)
+                self.ui.pkgList.removeItemWidget(item)
+                break
+
+        # Add update to list
         self.ui.pkgList.addItem(bodhi_update['itemlist_name'])
+        self.__bodhi_updates[bodhi_update['itemlist_name']] = bodhi_update
         self.__add_status_item(bodhi_update['itemlist_name'] + " added into Bodhi updates")
 
     def __set_installed_packages(self, packages):
@@ -217,29 +227,20 @@ class MainWindow(QtGui.QMainWindow):
                 dictionary[key] = dictionary[key].decode(decoding)
 
     def __send_comment(self):
-        comment = self.ui.commentEdit.text()
+        comment = self.ui.commentEdit.toPlainText()
         karma = self.ui.karmaBox.currentText()
-        update = None
-        pkg_title = None
 
-        if comment:
-            pkg_title = self.__activated_pkgList_item_text()
-            if pkg_title is not None:
-                for key in self.__get_current_set().testing_builds:
-                    if key == pkg_title:
-                        update = self.__get_current_set().testing_builds[pkg_title]
-
-        if update is None:
+        if self.__selected_pkglist_item is None:
             message = "Comment not submitted: Could not get update from testing builds"
-            self.ui.statusBar.showMessage(message)
+            self.ui.statusList.insertItem(0, message)
             return
         if not self.ui.usernameEdit.text():
             message = "Please enter FAS username."
-            self.ui.statusBar.showMessage(message)
+            self.ui.statusList.insertItem(0, message)
             return
         if not self.ui.passwordEdit.text():
             message = "Please enter FAS password."
-            self.ui.statusBar.showMessage(message)
+            self.ui.statusList.insertItem(0, message)
             return
 
         bc = BodhiClient()
@@ -247,22 +248,28 @@ class MainWindow(QtGui.QMainWindow):
         bc.password = self.ui.passwordEdit.text()
 
         message = "Processing... Wait please..."
-        self.ui.statusBar.showMessage(message)
+        self.ui.statusList.insertItem(0, message)
 
         for retry in range(3):
             try:
-                result = bc.comment(update["title"], comment, karma=karma)
+                # Send comment to bodhi
+                bc.comment(self.__selected_pkglist_item["title"], comment, karma=karma)
                 message = "Comment submitted successfully."
-                self.ui.statusBar.showMessage(message)
-                # save comment and end
-                self.__get_current_set().testing_builds[pkg_title] = result['update']
+                message2 = ("Reloading bodhi update for " 
+                           + str(self.__selected_pkglist_item['itemlist_name']) + "...")
+                self.ui.statusList.insertItem(0, message)
+                self.ui.statusList.insertItem(0, message2)
+
+                # Reload bodhi update
+                self.bodhi_workers_queue.put(self.__selected_pkglist_item['yum_package'])
                 return
             except AuthError:
                 message = "Invalid username or password. Please try again."
-                self.ui.statusBar.showMessage(message)
+                self.ui.statusList.insertItem(0, message)
+                break
             except ServerError, e:
                 message = "Server error %s" % str(e)
-                self.ui.statusBar.showMessage(message)
+                self.ui.statusList.insertItem(0, message)
 
     def __filter_already_submitted(self):
         """ Add only those installed packages to the pkgList for which user did not
@@ -333,11 +340,16 @@ class MainWindow(QtGui.QMainWindow):
         if pkg_item is None:
             return
 
+
         # Switch tabs to info tab
         self.ui.tabWidget.setCurrentIndex(0)
 
         text_browser_string = ""
         bodhi_update = self.__bodhi_updates[pkg_item.text()]
+        if bodhi_update is None:
+            return
+
+        self.__selected_pkglist_item = bodhi_update
 
         ## title
         #self.ui.pkgNameLabel.setText(data['builds'][0]['nvr'])
@@ -498,20 +510,6 @@ class MainWindow(QtGui.QMainWindow):
                 comment.setText(2, i['author'])
                 comment.setText(3, i['text'])
                 self.ui.treeWidget_feedback.insertTopLevelItem(0, comment)
-
-    def __activated_pkgList_item_text(self):
-        """Finds currently activated item in the pkgList.
-
-        Returns:
-            item.text(), currently activated item text.
-        """
-        index = 0
-        # check current activated item in pkgList
-        for i in range(self.ui.pkgList.count()):
-            item = self.ui.pkgList.item(index)
-            if item.isSelected():
-                return item.text()
-            index += 1
 
     def exit_threads(self):
         if not self.pkg_worker.isRunning():
