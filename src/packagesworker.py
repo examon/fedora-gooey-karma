@@ -26,7 +26,6 @@ import yum
 import rpm
 import datetime
 from PySide import QtCore
-from fedora.client import BodhiClient
 from yum.misc import getCacheDir
 
 class PackagesWorker(QtCore.QThread):

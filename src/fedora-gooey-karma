@@ -29,14 +29,12 @@ sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '../share/fedora-gooe
 
 import webbrowser
 import yum
-import multiprocessing
 import Queue
 import rpm
 from fedora.client import AuthError
 from fedora.client import ServerError
 from fedora.client.bodhi import BodhiClient
 from yum.misc import getCacheDir
-from yum import Errors
 from PySide import QtCore
 from PySide import QtGui
 
@@ -59,7 +57,6 @@ class MainWindow(QtGui.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-
         # Prepare Queues
         self.bodhi_workers_queue = Queue.Queue()
         self.pkg_worker_queue = Queue.Queue()
@@ -67,6 +64,7 @@ class MainWindow(QtGui.QMainWindow):
         # Prepare ui
         self.rpmTS = rpm.TransactionSet()
         self.__load_and_set_fedora_releases()
+        self.ui.tabWidget.setCurrentIndex(0)
 
         # YumBase and cache
         self.yb = yum.YumBase()
@@ -335,6 +333,9 @@ class MainWindow(QtGui.QMainWindow):
         if pkg_item is None:
             return
 
+        # Switch tabs to info tab
+        self.ui.tabWidget.setCurrentIndex(0)
+
         text_browser_string = ""
         bodhi_update = self.__bodhi_updates[pkg_item.text()]
 
@@ -526,7 +527,7 @@ def main():
     win.show()
     ret = app.exec_()
     win.exit_threads()
-    sys.exit()
+    sys.exit(ret)
 
 if __name__ == "__main__":
     main()
