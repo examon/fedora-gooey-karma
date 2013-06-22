@@ -115,7 +115,7 @@
          <item>
           <widget class="QLineEdit" name="karmaUsernameEdit">
            <property name="placeholderText">
-            <string>username</string>
+            <string>username for karma filter</string>
            </property>
           </widget>
          </item>

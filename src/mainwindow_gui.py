@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui/mainwindow.ui'
 #
-# Created: Sat Jun 22 22:44:15 2013
+# Created: Sat Jun 22 23:57:23 2013
 #      by: pyside-uic 0.2.13 running on PySide 1.1.0
 #
 # WARNING! All changes made in this file will be lost!
@@ -258,7 +258,7 @@ class Ui_MainWindow(object):
         self.availableBtn.setText(QtGui.QApplication.translate("MainWindow", "Available", None, QtGui.QApplication.UnicodeUTF8))
         self.pkgList.setSortingEnabled(True)
         self.karmaCheckBox.setText(QtGui.QApplication.translate("MainWindow", "Karma not submitted", None, QtGui.QApplication.UnicodeUTF8))
-        self.karmaUsernameEdit.setPlaceholderText(QtGui.QApplication.translate("MainWindow", "username", None, QtGui.QApplication.UnicodeUTF8))
+        self.karmaUsernameEdit.setPlaceholderText(QtGui.QApplication.translate("MainWindow", "username for karma filter", None, QtGui.QApplication.UnicodeUTF8))
         self.loadPackagesBtn.setText(QtGui.QApplication.translate("MainWindow", "Load Packages", None, QtGui.QApplication.UnicodeUTF8))
         self.pkgNameLabel.setText(QtGui.QApplication.translate("MainWindow", "Package name", None, QtGui.QApplication.UnicodeUTF8))
         self.textBrowser.setHtml(QtGui.QApplication.translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"

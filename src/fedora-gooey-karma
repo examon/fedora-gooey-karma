@@ -89,6 +89,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.treeWidget_bugs.itemDoubleClicked.connect(self.__show_bug_in_browser)
         self.ui.treeWidget_test_cases.itemDoubleClicked.connect(self.__show_testcase_in_browser)
         self.ui.karmaCheckBox.stateChanged.connect(self.__filter_already_submitted)
+        self.ui.karmaUsernameEdit.textChanged.connect(self.__filter_already_submitted)
         self.ui.sendBtn.clicked.connect(self.__send_comment)
 
         # Prepare threads
@@ -275,32 +276,31 @@ class MainWindow(QtGui.QMainWindow):
         """ Add only those installed packages to the pkgList for which user did not
         submitted karma. (uses username from the karmaUsernameEdit)
         """
-        if not self.ui.karmaCheckBox.isChecked() or not self.ui.karmaUsernameEdit.text():
-            self.__populate_pkgList()
-            return
+        if self.ui.karmaCheckBox.isChecked():
+            self.__populate_pkgList(True)
+        else:
+            self.__populate_pkgList(False)
+
+    def __populate_pkgList(self, not_submitted_karma=False):
+        username = self.ui.karmaUsernameEdit.text()
         self.ui.pkgList.clear()
 
-        for build in self.__get_current_set().builds:
-            data = self.__get_current_set().testing_builds[build['nvr']]
-            comments = self.__get_current_set().get_comments(data)
-            already_submitted = False
-            for comment in comments:
-                if comment[1] == self.ui.karmaUsernameEdit.text():
-                    already_submitted = True
-                    break
-            if not already_submitted:
-                self.ui.pkgList.addItem(build['nvr'])
-
-    def __populate_pkgList(self):
-        self.ui.pkgList.clear()
-        current_set = self.__get_current_set()
-        if current_set is None:
+        if self.__bodhi_updates is None:
             return
-        for build in current_set.builds:
-            if self.ui.installedBtn.isChecked() and 'installed' in build:
-                self.ui.pkgList.addItem(build['nvr'])
-            elif self.ui.availableBtn.isChecked():
-                self.ui.pkgList.addItem(build['nvr'])
+
+        for key in self.__bodhi_updates.keys():
+            update = self.__bodhi_updates[key]
+            if self.ui.installedBtn.isChecked():
+                add_it = True
+                # If we want to filter out updates which has karma from user
+                if not_submitted_karma:
+                    for comment in update['formatted_comments']:
+                        if comment['author'] == username:
+                            add_it = False
+
+                # Add to list
+                if add_it:
+                    self.ui.pkgList.addItem(update['itemlist_name'])
 
     def __show_installed(self):
         self.ui.availableBtn.setChecked(False)
