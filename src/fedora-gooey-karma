@@ -81,15 +81,15 @@ class MainWindow(QtGui.QMainWindow):
         # Connects
         self.ui.actionQuit.triggered.connect(QtCore.QCoreApplication.instance().quit)
         self.ui.pkgList.currentItemChanged.connect(self.__show_package_detail)
-        self.ui.searchEdit.textChanged.connect(self.__search_pkg)
+        self.ui.searchEdit.textChanged.connect(self.__populate_pkgList)
         self.ui.installedBtn.clicked.connect(self.__show_installed)
         self.ui.availableBtn.clicked.connect(self.__show_available)
         self.ui.loadPackagesBtn.clicked.connect(self.__start_pkg_worker)
         self.ui.releaseComboBox.currentIndexChanged.connect(self.__refresh_package_list)
         self.ui.treeWidget_bugs.itemDoubleClicked.connect(self.__show_bug_in_browser)
         self.ui.treeWidget_test_cases.itemDoubleClicked.connect(self.__show_testcase_in_browser)
-        self.ui.karmaCheckBox.stateChanged.connect(self.__filter_already_submitted)
-        self.ui.karmaUsernameEdit.textChanged.connect(self.__filter_already_submitted)
+        self.ui.karmaCheckBox.stateChanged.connect(self.__populate_pkgList)
+        self.ui.karmaUsernameEdit.textChanged.connect(self.__populate_pkgList)
         self.ui.sendBtn.clicked.connect(self.__send_comment)
 
         # Prepare threads
@@ -182,30 +182,6 @@ class MainWindow(QtGui.QMainWindow):
             self.ui.installedBtn.setChecked(True)
             self.__show_installed()
 
-    def __search_pkg(self):
-        # used for searchEdit searching
-        if not self.ui.installedBtn.isChecked() and not self.ui.availableBtn.isChecked():
-            return
-        if self.__get_current_set() is None:
-            return
-
-        phrase = str(self.ui.searchEdit.text())
-        if not phrase:
-            if self.ui.karmaCheckBox.isChecked() and self.ui.karmaUsernameEdit.text() and self.ui.installedBtn.isChecked():
-                self.__filter_already_submitted()
-            else:
-                self.__populate_pkgList()
-            return
-
-        self.ui.pkgList.clear()
-        for build in self.__get_current_set().builds:
-            if build['nvr'].startswith(phrase):
-                if self.ui.installedBtn.isChecked():
-                    if 'installed' in build:
-                        self.ui.pkgList.addItem(build['nvr'])
-                elif self.ui.availableBtn.isChecked():
-                    self.ui.pkgList.addItem(build['nvr'])
-
     def __save_available_pkg_list(self, pkg_object):
         self.pkg_available[pkg_object[0]] = pkg_object[1]
         releasever = self.ui.releaseComboBox.currentText().split()[-1]
@@ -272,24 +248,23 @@ class MainWindow(QtGui.QMainWindow):
                 message = "Server error %s" % str(e)
                 self.ui.statusList.insertItem(0, message)
 
-    def __filter_already_submitted(self):
-        """ Add only those installed packages to the pkgList for which user did not
-        submitted karma. (uses username from the karmaUsernameEdit)
-        """
-        if self.ui.karmaCheckBox.isChecked():
-            self.__populate_pkgList(True)
-        else:
-            self.__populate_pkgList(False)
-
-    def __populate_pkgList(self, not_submitted_karma=False):
+    def __populate_pkgList(self):
         username = self.ui.karmaUsernameEdit.text()
+        not_submitted_karma = self.ui.karmaCheckBox.isChecked()
         self.ui.pkgList.clear()
+
 
         if self.__bodhi_updates is None:
             return
 
         for key in self.__bodhi_updates.keys():
             update = self.__bodhi_updates[key]
+
+            # Filter package list by search text
+            if len(self.ui.searchEdit.text()) > 0:
+                if self.ui.searchEdit.text() not in update['itemlist_name']:
+                    continue
+
             if self.ui.installedBtn.isChecked():
                 add_it = True
                 # If we want to filter out updates which has karma from user
