@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui/mainwindow.ui'
 #
-# Created: Tue Jun 18 22:46:27 2013
+# Created: Sat Jun 22 23:57:23 2013
 #      by: pyside-uic 0.2.13 running on PySide 1.1.0
 #
 # WARNING! All changes made in this file will be lost!
@@ -191,9 +191,9 @@ class Ui_MainWindow(object):
         self.label_3.setFont(font)
         self.label_3.setObjectName("label_3")
         self.gridLayout_2.addWidget(self.label_3, 2, 0, 1, 1)
-        self.plainTextEdit = QtGui.QPlainTextEdit(self.TabComment)
-        self.plainTextEdit.setObjectName("plainTextEdit")
-        self.gridLayout_2.addWidget(self.plainTextEdit, 1, 0, 1, 1)
+        self.commentEdit = QtGui.QPlainTextEdit(self.TabComment)
+        self.commentEdit.setObjectName("commentEdit")
+        self.gridLayout_2.addWidget(self.commentEdit, 1, 0, 1, 1)
         self.textHints = QtGui.QTextBrowser(self.TabComment)
         self.textHints.setEnabled(True)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Fixed)
@@ -230,11 +230,11 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuFile.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
         self.karmaBox.setCurrentIndex(1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-        MainWindow.setTabOrder(self.karmaBox, self.plainTextEdit)
-        MainWindow.setTabOrder(self.plainTextEdit, self.sendBtn)
+        MainWindow.setTabOrder(self.karmaBox, self.commentEdit)
+        MainWindow.setTabOrder(self.commentEdit, self.sendBtn)
         MainWindow.setTabOrder(self.sendBtn, self.textHints)
         MainWindow.setTabOrder(self.textHints, self.loadPackagesBtn)
         MainWindow.setTabOrder(self.loadPackagesBtn, self.searchEdit)
@@ -258,7 +258,7 @@ class Ui_MainWindow(object):
         self.availableBtn.setText(QtGui.QApplication.translate("MainWindow", "Available", None, QtGui.QApplication.UnicodeUTF8))
         self.pkgList.setSortingEnabled(True)
         self.karmaCheckBox.setText(QtGui.QApplication.translate("MainWindow", "Karma not submitted", None, QtGui.QApplication.UnicodeUTF8))
-        self.karmaUsernameEdit.setPlaceholderText(QtGui.QApplication.translate("MainWindow", "username", None, QtGui.QApplication.UnicodeUTF8))
+        self.karmaUsernameEdit.setPlaceholderText(QtGui.QApplication.translate("MainWindow", "username for karma filter", None, QtGui.QApplication.UnicodeUTF8))
         self.loadPackagesBtn.setText(QtGui.QApplication.translate("MainWindow", "Load Packages", None, QtGui.QApplication.UnicodeUTF8))
         self.pkgNameLabel.setText(QtGui.QApplication.translate("MainWindow", "Package name", None, QtGui.QApplication.UnicodeUTF8))
         self.textBrowser.setHtml(QtGui.QApplication.translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
