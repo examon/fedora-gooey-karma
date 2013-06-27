@@ -100,9 +100,9 @@ class PackagesWorker(QtCore.QThread):
         # Send installed packages to GUI
         self.set_installed_packages.emit(installed_packages)
 
-        installed_packages_count = len(installed_packages)
-        installed_updates_testing = []
-        
+        # Start gathering available updates
+        #self.bodhi_workers_queue.put(['available_packages', releasever])
+
         # Prepare days
         # TODO: grab it from GUI, not constant
         now = datetime.datetime.now()
@@ -118,7 +118,7 @@ class PackagesWorker(QtCore.QThread):
             installed_timedelta = now - installed
             if installed_timedelta < installed_max_days:
                 if rel.startswith('fc') and releasever in rel:
-                    if pkg.ui_from_repo == '@updates-testing':
-                        self.bodhi_workers_queue.put(pkg)
+                    if True or pkg.ui_from_repo == '@updates-testing':
+                        self.bodhi_workers_queue.put(['package_update', pkg])
 
 # vim: set expandtab ts=4 sts=4 sw=4 :

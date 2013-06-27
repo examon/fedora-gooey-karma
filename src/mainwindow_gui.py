@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui/mainwindow.ui'
 #
-# Created: Mon Jun 24 18:08:11 2013
+# Created: Mon Jun 24 19:29:12 2013
 #      by: pyside-uic 0.2.13 running on PySide 1.1.0
 #
 # WARNING! All changes made in this file will be lost!
@@ -216,15 +216,6 @@ class Ui_MainWindow(object):
         self.textHints.setObjectName("textHints")
         self.gridLayout_2.addWidget(self.textHints, 3, 0, 1, 1)
         self.tabWidget.addTab(self.TabComment, "")
-        self.tab = QtGui.QWidget()
-        self.tab.setObjectName("tab")
-        self.horizontalLayout_3 = QtGui.QHBoxLayout(self.tab)
-        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
-        self.splitter = QtGui.QSplitter(self.tab)
-        self.splitter.setOrientation(QtCore.Qt.Vertical)
-        self.splitter.setObjectName("splitter")
-        self.horizontalLayout_3.addWidget(self.splitter)
-        self.tabWidget.addTab(self.tab, "")
         self.horizontalLayout_2.addWidget(self.tabWidget)
         self.statusList = QtGui.QListWidget(self.splitter_5)
         self.statusList.setSelectionMode(QtGui.QAbstractItemView.NoSelection)
@@ -309,7 +300,6 @@ class Ui_MainWindow(object):
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Have you taken a look at <span style=\" font-weight:600;\">bugs</span>?</p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">If you want to give <span style=\" font-weight:600;\">negative</span> karma - are you sure that<span style=\" font-weight:600;\"> this component</span> makes <span style=\" font-weight:600;\">problems</span>?</p></body></html>", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.TabComment), QtGui.QApplication.translate("MainWindow", "Add comment and karma", None, QtGui.QApplication.UnicodeUTF8))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), QtGui.QApplication.translate("MainWindow", "Page", None, QtGui.QApplication.UnicodeUTF8))
         self.menuFile.setTitle(QtGui.QApplication.translate("MainWindow", "File", None, QtGui.QApplication.UnicodeUTF8))
         self.actionQuit.setText(QtGui.QApplication.translate("MainWindow", "Quit", None, QtGui.QApplication.UnicodeUTF8))
 

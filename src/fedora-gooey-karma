@@ -56,6 +56,10 @@ class MainWindow(QtGui.QMainWindow):
         super(MainWindow, self).__init__(parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        qr = self.frameGeometry()
+        cp = QtGui.QDesktopWidget().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
 
         # Prepare Queues
         self.bodhi_workers_queue = Queue.Queue()
@@ -71,12 +75,10 @@ class MainWindow(QtGui.QMainWindow):
         cachedir = getCacheDir()
         self.yb.repos.setCacheDir(cachedir)
 
-        self.pkg_available = {}
-        self.pkg_installed = {}
-
         # Holders of data
         self.__installed_packages = {}
-        self.__bodhi_updates = {}
+        self.__installed_updates = {}
+        self.__available_updates = {}
 
         # Connects
         self.ui.actionQuit.triggered.connect(QtCore.QCoreApplication.instance().quit)
@@ -96,7 +98,7 @@ class MainWindow(QtGui.QMainWindow):
         self.bodhi_workers = []
         for i in range(self.__BODHI_WORKERS_COUNT):
             b = BodhiWorker(self.bodhi_workers_queue)
-            b.bodhi_query_done.connect(self.__bodhi_add_update)
+            b.bodhi_query_done.connect(self.__bodhi_process_result)
             b.start()
             self.bodhi_workers.append(b)
 
@@ -105,32 +107,56 @@ class MainWindow(QtGui.QMainWindow):
         self.pkg_worker.start()
 
         # Pkg worker threads
-        self.pkg_worker.load_available_packages_done.connect(self.__save_available_pkg_list)
-        self.pkg_worker.load_available_packages_start.connect(self.__available_pkg_list_loading_info)
         self.pkg_worker.load_installed_packages_done.connect(self.__save_installed_pkg_list)
         self.pkg_worker.load_installed_packages_start.connect(self.__installed_pkg_list_loading_info)
     
     def __add_status_item(self, item):
         self.ui.statusList.insertItem(0, str(item))
 
-    def __bodhi_add_update(self, bodhi_update):
-        # Is this package in list?
-        # If yes, remove it to add it again
-        for i in range(self.ui.pkgList.count()):
-            item = self.ui.pkgList.item(i)
-            if item.text() == bodhi_update['itemlist_name']:
-                self.ui.pkgList.takeItem(i)
-                self.ui.pkgList.removeItemWidget(item)
-                break
+    def __bodhi_process_result(self, result):
+        variant, data = result
 
-        # Add update to list
-        self.ui.pkgList.addItem(bodhi_update['itemlist_name'])
-        self.__bodhi_updates[bodhi_update['itemlist_name']] = bodhi_update
-        self.__add_status_item(bodhi_update['itemlist_name'] + " added into Bodhi updates")
+        # We've got one bodhi update of installed package, add it to pkg list
+        if variant == 'installed':
+            self.__installed_updates[data['itemlist_name']] = data
+            self.__add_status_item(data['itemlist_name'] + " is installed")
+
+            if self.ui.installedBtn.isChecked():
+                # Is this package in list?
+                # If yes, remove it to add it again
+                for i in range(self.ui.pkgList.count()):
+                    item = self.ui.pkgList.item(i)
+                    if item.text() == data['itemlist_name']:
+                        self.ui.pkgList.takeItem(i)
+                        self.ui.pkgList.removeItemWidget(item)
+                        break
+
+                # Add update to list
+                self.ui.pkgList.addItem(data['itemlist_name'])
+
+        # We've got available package update, save it
+        elif variant == 'available':
+            self.__available_updates[data['itemlist_name']] = data
+            self.__add_status_item(data['itemlist_name'] + " can be updated")
+
+            if self.ui.availableBtn.isChecked():
+                # Is this package in list?
+                # If yes, remove it to add it again
+                for i in range(self.ui.pkgList.count()):
+                    item = self.ui.pkgList.item(i)
+                    if item.text() == data['itemlist_name']:
+                        self.ui.pkgList.takeItem(i)
+                        self.ui.pkgList.removeItemWidget(item)
+                        break
+
+                # Add update to list
+                self.ui.pkgList.addItem(data['itemlist_name'])
 
     def __set_installed_packages(self, packages):
         self.__add_status_item(str(len(packages)) + " installed packages on system")
-        self.__installed_packages = packages
+        for pkg in packages:
+            self.__installed_packages[pkg.nvr] = pkg
+        #self.__installed_packages = packages
 
     def __load_and_set_fedora_releases(self):
         # Load fedora-release version
@@ -181,17 +207,6 @@ class MainWindow(QtGui.QMainWindow):
         elif not self.ui.installedBtn.isChecked() and not self.ui.availableBtn.isChecked():
             self.ui.installedBtn.setChecked(True)
             self.__show_installed()
-
-    def __save_available_pkg_list(self, pkg_object):
-        self.pkg_available[pkg_object[0]] = pkg_object[1]
-        releasever = self.ui.releaseComboBox.currentText().split()[-1]
-        if releasever == pkg_object[0]:
-            self.ui.availableBtn.setChecked(True)
-            self.__show_available()
-        self.ui.statusBar.clearMessage()
-        message = "All available packages has been loaded. [Fedora %s]" % pkg_object[0]
-        self.ui.statusBar.showMessage(message)
-        self.ui.searchEdit.setEnabled(True)
 
     def __save_installed_pkg_list(self, pkg_object):
         message = "All installed packages has been loaded. [Fedora %s]" % pkg_object
@@ -253,53 +268,42 @@ class MainWindow(QtGui.QMainWindow):
         not_submitted_karma = self.ui.karmaCheckBox.isChecked()
         self.ui.pkgList.clear()
 
+        # Prepare data which we want to show
+        if self.ui.installedBtn.isChecked():
+            pkgList = self.__installed_updates
+        elif self.ui.availableBtn.isChecked():
+            pkgList = self.__available_updates
 
-        if self.__bodhi_updates is None:
-            return
 
-        for key in self.__bodhi_updates.keys():
-            update = self.__bodhi_updates[key]
+        # Loop packages
+        for key in pkgList.keys():
+            update = pkgList[key]
 
             # Filter package list by search text
             if len(self.ui.searchEdit.text()) > 0:
                 if self.ui.searchEdit.text() not in update['itemlist_name']:
                     continue
 
-            if self.ui.installedBtn.isChecked():
-                add_it = True
-                # If we want to filter out updates which has karma from user
-                if not_submitted_karma:
-                    for comment in update['formatted_comments']:
-                        if comment['author'] == username:
-                            add_it = False
+            add_it = True
+            # If we want to filter out updates which has karma from user
+            if not_submitted_karma:
+                for comment in update['formatted_comments']:
+                    if comment['author'] == username:
+                        add_it = False
 
-                # Add to list
-                if add_it:
-                    self.ui.pkgList.addItem(update['itemlist_name'])
+            # Add to list
+            if add_it:
+                self.ui.pkgList.addItem(update['itemlist_name'])
 
     def __show_installed(self):
         self.ui.availableBtn.setChecked(False)
-        if self.ui.installedBtn.isChecked():
-            try:
-                self.__populate_pkgList()
-                self.__search_pkg()
-            except Exception, err:
-                print "Packages are not ready yet. Please wait!"
-                print err
-        elif not self.ui.installedBtn.isChecked():
-            self.ui.pkgList.clear()
+        self.ui.installedBtn.setChecked(True)
+        self.__populate_pkgList()
 
     def __show_available(self):
         self.ui.installedBtn.setChecked(False)
-        if self.ui.availableBtn.isChecked():
-            try:
-                self.__populate_pkgList()
-                self.__search_pkg()
-            except Exception, err:
-                print "Packages are not ready yet. Please wait!"
-                print err
-        elif not self.ui.availableBtn.isChecked():
-            self.ui.pkgList.clear()
+        self.ui.availableBtn.setChecked(True)
+        self.__populate_pkgList()
 
     def __show_package_detail(self, pkg_item):
         """Shows package detail in the MainWindow.
@@ -320,20 +324,27 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.tabWidget.setCurrentIndex(0)
 
         text_browser_string = ""
-        bodhi_update = self.__bodhi_updates[pkg_item.text()]
+        if self.ui.installedBtn.isChecked():
+            pkgList = self.__installed_updates
+        elif self.ui.availableBtn.isChecked():
+            pkgList = self.__available_updates
+        else:
+            return
+
+        bodhi_update = pkgList[pkg_item.text()]
+
         if bodhi_update is None:
             return
 
         self.__selected_pkglist_item = bodhi_update
 
         ## title
-        #self.ui.pkgNameLabel.setText(data['builds'][0]['nvr'])
         self.ui.pkgNameLabel.setText(bodhi_update['itemlist_name'])
 
         ## yum info
         yum_values = {}
         yum_format_string = (
-            "\n        Yum Info\n"
+            "\n        Yum Info %(installed_version)s\n"
             "        ========\n\n"
             "           Name: %(name)s\n"
             "           Arch: %(arch)s\n"
@@ -350,13 +361,19 @@ class MainWindow(QtGui.QMainWindow):
             "%(description)s\n\n"
         )
 
-        # Search for package in list of installed packages
-        yum_pkg = None
-        yum_pkg_deplist = None
+        # Grab yum info from installed package
+        if bodhi_update.variant == 'installed':
+            yum_pkg = bodhi_update.yum_package
+        elif bodhi_update.variant == 'available':
+            # Search for package
+            for key in self.__installed_packages.keys():
+                if self.__installed_packages[key].name == bodhi_update.yum_package.name:
+                    yum_pkg = self.__installed_packages[key]
+                    break
+        else:
+            yum_pkg = None
 
-        for yum_pkg in self.__installed_packages:
-            if yum_pkg.nvr == pkg_item.text():
-                break
+        yum_pkg_deplist = None
 
         if yum_pkg is not None:
             # if we got yum package
@@ -372,6 +389,9 @@ class MainWindow(QtGui.QMainWindow):
             yum_values['url'] = yum_pkg.url
             yum_values['license'] = yum_pkg.license
             yum_values['description'] = yum_pkg.description
+            yum_values['installed_version'] = ''
+            if bodhi_update.variant == 'available':
+                yum_values['installed_version'] = '(installed version)'
             # decode all strings found in yum_values to utf-8
             self.__decode_dict(yum_values)
             # map fetched yum info on the yum_format_string
@@ -385,7 +405,9 @@ class MainWindow(QtGui.QMainWindow):
             try:
                 deplist = self.yb.findDeps(yum_pkg_deplist)
             except Exception, e:
-                print "_show_package_detail() error: %s" % e
+                # print "_show_package_detail() error: %s" % e
+                # TODO: this does not work
+                pass
 
             for key in deplist:
                 for packages in deplist[key]:
