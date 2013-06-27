@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>996</width>
-    <height>656</height>
+    <width>1002</width>
+    <height>772</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -32,70 +32,104 @@
           </property>
           <layout class="QVBoxLayout" name="verticalLayout">
            <item>
-            <widget class="QLineEdit" name="searchEdit">
-             <property name="font">
-              <font>
-               <italic>true</italic>
-              </font>
+            <widget class="QGroupBox" name="groupBox">
+             <property name="title">
+              <string>Filter</string>
              </property>
-             <property name="inputMask">
-              <string/>
+             <property name="checkable">
+              <bool>false</bool>
              </property>
-             <property name="text">
-              <string/>
-             </property>
-             <property name="placeholderText">
-              <string>Search packages...</string>
-             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_5">
+              <item>
+               <widget class="QLineEdit" name="searchEdit">
+                <property name="font">
+                 <font>
+                  <italic>true</italic>
+                 </font>
+                </property>
+                <property name="inputMask">
+                 <string/>
+                </property>
+                <property name="text">
+                 <string/>
+                </property>
+                <property name="placeholderText">
+                 <string>Search packages...</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="karmaCheckBox">
+                <property name="text">
+                 <string>karma not submitted by user</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="karmaUsernameEdit">
+                <property name="dragEnabled">
+                 <bool>false</bool>
+                </property>
+                <property name="placeholderText">
+                 <string>username for karma filter</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout">
+                <item>
+                 <widget class="QPushButton" name="installedBtn">
+                  <property name="text">
+                   <string>Installed</string>
+                  </property>
+                  <property name="checkable">
+                   <bool>true</bool>
+                  </property>
+                  <property name="checked">
+                   <bool>true</bool>
+                  </property>
+                  <property name="autoDefault">
+                   <bool>false</bool>
+                  </property>
+                  <property name="default">
+                   <bool>false</bool>
+                  </property>
+                  <property name="flat">
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="availableBtn">
+                  <property name="text">
+                   <string>Available</string>
+                  </property>
+                  <property name="checkable">
+                   <bool>true</bool>
+                  </property>
+                  <property name="checked">
+                   <bool>false</bool>
+                  </property>
+                  <property name="autoDefault">
+                   <bool>false</bool>
+                  </property>
+                  <property name="default">
+                   <bool>false</bool>
+                  </property>
+                  <property name="flat">
+                   <bool>false</bool>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+             <zorder>searchEdit</zorder>
+             <zorder>searchEdit</zorder>
+             <zorder></zorder>
+             <zorder>karmaCheckBox</zorder>
+             <zorder>karmaUsernameEdit</zorder>
             </widget>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout">
-             <item>
-              <widget class="QPushButton" name="installedBtn">
-               <property name="text">
-                <string>Installed</string>
-               </property>
-               <property name="checkable">
-                <bool>true</bool>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-               <property name="autoDefault">
-                <bool>false</bool>
-               </property>
-               <property name="default">
-                <bool>false</bool>
-               </property>
-               <property name="flat">
-                <bool>false</bool>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="availableBtn">
-               <property name="text">
-                <string>Available</string>
-               </property>
-               <property name="checkable">
-                <bool>true</bool>
-               </property>
-               <property name="checked">
-                <bool>false</bool>
-               </property>
-               <property name="autoDefault">
-                <bool>false</bool>
-               </property>
-               <property name="default">
-                <bool>false</bool>
-               </property>
-               <property name="flat">
-                <bool>false</bool>
-               </property>
-              </widget>
-             </item>
-            </layout>
            </item>
            <item>
             <widget class="QListWidget" name="pkgList">
@@ -107,27 +141,6 @@
              </property>
              <property name="sortingEnabled">
               <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="karmaCheckBox">
-             <property name="text">
-              <string>Karma not submitted</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLineEdit" name="karmaUsernameEdit">
-             <property name="placeholderText">
-              <string>username for karma filter</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="Line" name="line_3">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
              </property>
             </widget>
            </item>
@@ -532,6 +545,9 @@ p, li { white-space: pre-wrap; }
        <property name="selectionMode">
         <enum>QAbstractItemView::NoSelection</enum>
        </property>
+       <property name="sortingEnabled">
+        <bool>false</bool>
+       </property>
       </widget>
      </widget>
     </item>
@@ -542,7 +558,7 @@ p, li { white-space: pre-wrap; }
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>996</width>
+     <width>1002</width>
      <height>23</height>
     </rect>
    </property>
@@ -552,12 +568,24 @@ p, li { white-space: pre-wrap; }
     </property>
     <addaction name="actionQuit"/>
    </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="actionQuit">
    <property name="text">
     <string>Quit</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About Fedora Gooey Karma</string>
    </property>
   </action>
  </widget>
@@ -567,7 +595,6 @@ p, li { white-space: pre-wrap; }
   <tabstop>sendBtn</tabstop>
   <tabstop>textHints</tabstop>
   <tabstop>loadPackagesBtn</tabstop>
-  <tabstop>searchEdit</tabstop>
   <tabstop>textBrowser</tabstop>
   <tabstop>treeWidget_bugs</tabstop>
   <tabstop>treeWidget_test_cases</tabstop>
@@ -576,11 +603,26 @@ p, li { white-space: pre-wrap; }
   <tabstop>availableBtn</tabstop>
   <tabstop>pkgList</tabstop>
   <tabstop>tabWidget</tabstop>
-  <tabstop>karmaUsernameEdit</tabstop>
   <tabstop>releaseComboBox</tabstop>
-  <tabstop>karmaCheckBox</tabstop>
   <tabstop>installedBtn</tabstop>
  </tabstops>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>karmaCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>karmaUsernameEdit</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>114</x>
+     <y>112</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>114</x>
+     <y>137</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

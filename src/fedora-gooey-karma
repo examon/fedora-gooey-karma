@@ -69,6 +69,7 @@ class MainWindow(QtGui.QMainWindow):
         self.rpmTS = rpm.TransactionSet()
         self.__load_and_set_fedora_releases()
         self.ui.tabWidget.setCurrentIndex(0)
+        self.ui.karmaUsernameEdit.setVisible(False)
 
         # YumBase and cache
         self.yb = yum.YumBase()
@@ -82,6 +83,8 @@ class MainWindow(QtGui.QMainWindow):
 
         # Connects
         self.ui.actionQuit.triggered.connect(QtCore.QCoreApplication.instance().quit)
+        self.ui.actionAbout.triggered.connect(self.__show_message_box_about)
+
         self.ui.pkgList.currentItemChanged.connect(self.__show_package_detail)
         self.ui.searchEdit.textChanged.connect(self.__populate_pkgList)
         self.ui.installedBtn.clicked.connect(self.__show_installed)
@@ -109,6 +112,15 @@ class MainWindow(QtGui.QMainWindow):
         self.pkg_worker.load_installed_packages_done.connect(self.__save_installed_pkg_list)
         self.pkg_worker.load_installed_packages_start.connect(self.__installed_pkg_list_loading_info)
     
+    def __show_message_box_about(self):
+        text = (
+            "<b>Fedora Gooey Karma</b> is a tool for browsing installed packages from updates-testing repository.<br><br>"
+            "You can easily add karma comment, open bugs attached to new build and more.<br><br>"
+            "<b>Authors:</b><br>"
+            "<ul><li>Branislav Blaskovic</li><li>Tomas Meszaros</li></ul>"
+        )
+        QtGui.QMessageBox.about(QtGui.QApplication.activeWindow(), "Fedora Gooey Karma", text)
+
     def __add_status_item(self, item):
         self.ui.statusList.insertItem(0, str(item))
 
