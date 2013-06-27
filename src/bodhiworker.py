@@ -38,25 +38,27 @@ class BodhiWorker(QtCore.QThread):
 
     def run(self):
         while True:
-            package = self.queue.get()
+            action, data = self.queue.get()
 
-            # Get info about this build
-            bodhi_update = self.__bodhi_query_pkg(package)
-            if bodhi_update:
-                # If we get info from bodhi, prepare some info
-                # and send it to GUI
-                bodhi_update['bugs_by_id'] = self.__get_bugs_by_id(bodhi_update)
-                bodhi_update['bodhi_url'] = self.__get_url(bodhi_update)
-                bodhi_update['test_cases'] = self.__get_testcases(bodhi_update)
-                bodhi_update['formatted_comments'] = self.__get_comments(bodhi_update)
-                self.bodhi_query_done.emit(bodhi_update)
+            if action == 'package_update':
+                package = data
+                # Get info about this build
+                variant, bodhi_update = self.__bodhi_query_pkg(package)
+                if bodhi_update:
+                    # If we get info from bodhi, prepare some info
+                    # and send it to GUI
+                    bodhi_update['bugs_by_id'] = self.__get_bugs_by_id(bodhi_update)
+                    bodhi_update['bodhi_url'] = self.__get_url(bodhi_update)
+                    bodhi_update['test_cases'] = self.__get_testcases(bodhi_update)
+                    bodhi_update['formatted_comments'] = self.__get_comments(bodhi_update)
+                    self.bodhi_query_done.emit([variant, bodhi_update])
 
             self.queue.task_done()
 
     def __bodhi_query_pkg(self, package):
         # Search by name
         rel = package.release.split('.')[-1].replace('fc','F')
-        pkg_update = self.bc.query(release=rel, package=package.name)['updates']
+        pkg_update = self.bc.query(release=rel, package=package.name, status='testing')['updates']
 
         if pkg_update:
             for update in pkg_update:
@@ -65,9 +67,16 @@ class BodhiWorker(QtCore.QThread):
                     if build['nvr'] == package.nvr:
                         update['itemlist_name'] = package.nvr
                         update['yum_package'] = package
-                        return update
+                        update['variant'] = 'installed'
+                        return ['installed', update]
+                    # If not, there could be newer version
+                    elif build.package.name == package.name:
+                        update['itemlist_name'] = build['nvr']
+                        update['yum_package'] = build.package
+                        update['variant'] = 'available'
+                        return ['available', update]
 
-        return None
+        return [None, None]
 
     def __get_bugs_by_id(self, data):
         # Prepare bugs for easier use

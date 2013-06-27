@@ -71,18 +71,18 @@ class PackagesWorker(QtCore.QThread):
 
     def run(self):
         while True:
-            releasever = self.queue.get()
+            releasever, max_days = self.queue.get()
             
-            """Calls load_installed and load_available, when done, emits corresponding signals.
-            """
+            # Start loading packages
             self.load_installed_packages_start.emit(self)
-            self.load_installed(releasever)
+            self.load_installed(releasever, max_days)
+            # Wait for all packages to be loaded from bodhi
             self.bodhi_workers_queue.join()
             self.load_installed_packages_done.emit(releasever)
 
             self.queue.task_done()
 
-    def load_installed(self, releasever):
+    def load_installed(self, releasever, max_days):
         """Loads installed packages related to the releasever.
 
         Loads all locally installed packages related to the Fedora release version.
@@ -100,13 +100,8 @@ class PackagesWorker(QtCore.QThread):
         # Send installed packages to GUI
         self.set_installed_packages.emit(installed_packages)
 
-        installed_packages_count = len(installed_packages)
-        installed_updates_testing = []
-        
         # Prepare days
-        # TODO: grab it from GUI, not constant
         now = datetime.datetime.now()
-        max_days = 10
         installed_max_days = datetime.timedelta(max_days)
 
         # See packages for choosen release
@@ -118,7 +113,7 @@ class PackagesWorker(QtCore.QThread):
             installed_timedelta = now - installed
             if installed_timedelta < installed_max_days:
                 if rel.startswith('fc') and releasever in rel:
-                    if pkg.ui_from_repo == '@updates-testing':
-                        self.bodhi_workers_queue.put(pkg)
+                    if True or pkg.ui_from_repo == '@updates-testing':
+                        self.bodhi_workers_queue.put(['package_update', pkg])
 
 # vim: set expandtab ts=4 sts=4 sw=4 :
