@@ -99,12 +99,12 @@ class MainWindow(QtGui.QMainWindow):
         # Prepare threads
         self.bodhi_workers = []
         for i in range(self.__BODHI_WORKERS_COUNT):
-            b = BodhiWorker(self.bodhi_workers_queue)
+            b = BodhiWorker("bodhi_worker" + str(i), self.bodhi_workers_queue)
             b.bodhi_query_done.connect(self.__bodhi_process_result)
             b.start()
             self.bodhi_workers.append(b)
 
-        self.pkg_worker = PackagesWorker(self.pkg_worker_queue, self.bodhi_workers_queue)
+        self.pkg_worker = PackagesWorker(self.pkg_worker_queue, self.bodhi_workers_queue, self.__BODHI_WORKERS_COUNT)
         self.pkg_worker.set_installed_packages.connect(self.__set_installed_packages)
         self.pkg_worker.start()
 
@@ -375,8 +375,6 @@ class MainWindow(QtGui.QMainWindow):
         else:
             yum_pkg = None
 
-        yum_pkg_deplist = None
-
         if yum_pkg is not None:
             # if we got yum package
             # fetch info from yum_pkg
@@ -402,21 +400,29 @@ class MainWindow(QtGui.QMainWindow):
 
             ## related packages
             self.ui.treeWidget_related_packages.clear()
-            deplist = []
+            
+            ### Others pkgs category
+            item_others = QtGui.QTreeWidgetItem()
+            item_others.setText(0, "Other packages")
+            self.ui.treeWidget_related_packages.insertTopLevelItem(0, item_others)
 
-            try:
-                deplist = self.yb.findDeps(yum_pkg_deplist)
-            except Exception, e:
-                # print "_show_package_detail() error: %s" % e
-                # TODO: this does not work
-                pass
+            for key in bodhi_update['relevant_packages']['others'].keys():
+                rel_pkg = bodhi_update['relevant_packages']['others'][key]
+                pkg = QtGui.QTreeWidgetItem()
+                pkg.setText(0, str(rel_pkg.name))
+                item_others.insertChild(0, pkg)
 
-            for key in deplist:
-                for packages in deplist[key]:
-                    pkg_name = deplist[key][packages][0]
-                    pkg = QtGui.QTreeWidgetItem()
-                    pkg.setText(0, str(pkg_name))
-                    self.ui.treeWidget_related_packages.insertTopLevelItem(0, pkg)
+            ### Desktop pkgs category
+            item_desktop = QtGui.QTreeWidgetItem()
+            item_desktop.setText(0, "Desktop packages")
+            self.ui.treeWidget_related_packages.insertTopLevelItem(0, item_desktop)
+
+            for key in bodhi_update['relevant_packages']['desktop'].keys():
+                rel_pkg = bodhi_update['relevant_packages']['desktop'][key]
+                pkg = QtGui.QTreeWidgetItem()
+                pkg.setText(0, str(rel_pkg.name))
+                item_desktop.insertChild(0, pkg)
+
 
         else:
             print "Not in installed packages"

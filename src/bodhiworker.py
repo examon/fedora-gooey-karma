@@ -22,6 +22,8 @@
 #    Author: Branislav Blaskovic <branislav@blaskovic.sk>
 #    Author: Tomas Meszaros <exo@tty.sk>
 
+import re
+import subprocess
 from PySide import QtCore
 from fedora.client import BodhiClient
 
@@ -29,12 +31,15 @@ class BodhiWorker(QtCore.QThread):
 
     bodhi_query_done = QtCore.Signal(object)
 
-    def __init__(self, queue, parent=None):
+    def __init__(self, worker_name, queue, parent=None):
         super(BodhiWorker, self).__init__(parent)
         self.queue = queue
 
+        self.worker_name = worker_name
+
         bodhi_url = 'https://admin.fedoraproject.org/updates/'
         self.bc = BodhiClient(bodhi_url, useragent="Fedora Gooey Karma", debug=None)
+        self.installed_packages = []
 
     def run(self):
         while True:
@@ -51,9 +56,47 @@ class BodhiWorker(QtCore.QThread):
                     bodhi_update['bodhi_url'] = self.__get_url(bodhi_update)
                     bodhi_update['test_cases'] = self.__get_testcases(bodhi_update)
                     bodhi_update['formatted_comments'] = self.__get_comments(bodhi_update)
+                    bodhi_update['relevant_packages'] = self.__get_relevant_packages(package.name)
                     self.bodhi_query_done.emit([variant, bodhi_update])
 
+            elif action == 'set_installed_packages':
+                # Is this item for this worker?
+                # data[0] worker_name, data[1] installed_packages
+                if self.worker_name != data[0]:
+                    self.queue.put([action, data])
+
+                self.installed_packages = data[1]
+            else:
+                print "Bodhi worker: Unknown action"
+
             self.queue.task_done()
+
+    def __get_relevant_packages(self, package):    
+        pkgs = {}
+        pkgs['desktop'] = {}
+        pkgs['others'] = {}
+        
+        # TODO: Should be rewritten to pure python code
+        p = subprocess.Popen('repoquery -q --qf "%{name}" --whatrequires ' + str(package), 
+                             shell=True,
+                             stdout=subprocess.PIPE, 
+                             stderr=subprocess.STDOUT)
+
+        for line in p.stdout.readlines():
+            name = line.lstrip().rstrip()
+            for installed_pkg in self.installed_packages:
+                if installed_pkg.name == name:
+                    # Which category is it?
+                    category = 'others'
+                    ## Search for desktop file
+                    for filename in installed_pkg.filelist:
+                        if re.search('^/usr/share/applications/(.*).desktop$', filename):
+                            category = 'desktop'
+                            break
+                            
+                    pkgs[category][name] = installed_pkg
+
+        return pkgs
 
     def __bodhi_query_pkg(self, package):
         # Search by name

@@ -46,11 +46,12 @@ class PackagesWorker(QtCore.QThread):
 
     set_installed_packages = QtCore.Signal(object)
 
-    def __init__(self, queue, bodhi_workers_queue, parent=None):
+    def __init__(self, queue, bodhi_workers_queue, bodhi_workers_count, parent=None):
         super(PackagesWorker, self).__init__(parent)
         
         self.queue = queue
         self.bodhi_workers_queue = bodhi_workers_queue
+        self.bodhi_workers_count = bodhi_workers_count
 
         self.yb = yum.YumBase()
         cachedir = getCacheDir()
@@ -95,17 +96,23 @@ class PackagesWorker(QtCore.QThread):
         """
         
         # Load from yum rpmdb all installed packages
-        installed_packages = self.yb.rpmdb.returnPackages()
+        self.installed_packages = self.yb.rpmdb.returnPackages()
+        # Send it to all bodhi_workers
+        for i in range(self.bodhi_workers_count):
+            self.bodhi_workers_queue.put(['set_installed_packages', ['bodhi_worker' + str(i), self.installed_packages]])
+
+        # Wait for them to finish
+        self.bodhi_workers_queue.join()
 
         # Send installed packages to GUI
-        self.set_installed_packages.emit(installed_packages)
+        self.set_installed_packages.emit(self.installed_packages)
 
         # Prepare days
         now = datetime.datetime.now()
         installed_max_days = datetime.timedelta(max_days)
 
         # See packages for choosen release
-        for pkg in installed_packages:
+        for pkg in self.installed_packages:
             # Get Fedora release shortcut (e.g. fc18)
             rel = pkg.release.split('.')[-1]
             # We want just packages newer than XY days
