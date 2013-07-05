@@ -226,15 +226,15 @@ class MainWindow(QtGui.QMainWindow):
 
         if self.__selected_pkglist_item is None:
             message = "Comment not submitted: Could not get update from testing builds"
-            self.ui.statusList.insertItem(0, message)
+            self.__add_status_item(message)
             return
         if not self.ui.usernameEdit.text():
             message = "Please enter FAS username."
-            self.ui.statusList.insertItem(0, message)
+            self.__add_status_item(message)
             return
         if not self.ui.passwordEdit.text():
             message = "Please enter FAS password."
-            self.ui.statusList.insertItem(0, message)
+            self.__add_status_item(message)
             return
 
         bc = BodhiClient()
@@ -242,7 +242,7 @@ class MainWindow(QtGui.QMainWindow):
         bc.password = self.ui.passwordEdit.text()
 
         message = "Processing... Wait please..."
-        self.ui.statusList.insertItem(0, message)
+        self.__add_status_item(message)
 
         for retry in range(3):
             try:
@@ -251,19 +251,19 @@ class MainWindow(QtGui.QMainWindow):
                 message = "Comment submitted successfully."
                 message2 = ("Reloading bodhi update for " 
                            + str(self.__selected_pkglist_item['itemlist_name']) + "...")
-                self.ui.statusList.insertItem(0, message)
-                self.ui.statusList.insertItem(0, message2)
+                self.__add_status_item(message)
+                self.__add_status_item(message2)
 
                 # Reload bodhi update
                 self.bodhi_workers_queue.put(self.__selected_pkglist_item['yum_package'])
                 return
             except AuthError:
                 message = "Invalid username or password. Please try again."
-                self.ui.statusList.insertItem(0, message)
+                self.__add_status_item(message)
                 break
             except ServerError, e:
                 message = "Server error %s" % str(e)
-                self.ui.statusList.insertItem(0, message)
+                self.__add_status_item(message)
 
     def __populate_pkgList(self):
         username = self.ui.karmaUsernameEdit.text()
