@@ -507,9 +507,20 @@ class MainWindow(QtGui.QMainWindow):
         ## feedback
         self.ui.treeWidget_feedback.clear()
         comments = bodhi_update['formatted_comments']
+
+        ## prepare brushes
+        green_brush = QtGui.QBrush(QtCore.Qt.darkGreen)
+        red_brush = QtGui.QBrush(QtCore.Qt.red)
+
         if comments:
             for i in comments:
                 comment = CustomTreeWidgetItem()
+                # Set color for karma 
+                if i['karma'] == 1:
+                    comment.setForeground(1, green_brush)
+                if i['karma'] == -1:
+                    comment.setForeground(1, red_brush)
+
                 # Set vertical alignment to Top
                 comment.setTextAlignment(0, QtCore.Qt.AlignTop)
                 comment.setTextAlignment(1, QtCore.Qt.AlignTop)
