@@ -124,11 +124,6 @@
                </layout>
               </item>
              </layout>
-             <zorder>searchEdit</zorder>
-             <zorder>searchEdit</zorder>
-             <zorder></zorder>
-             <zorder>karmaCheckBox</zorder>
-             <zorder>karmaUsernameEdit</zorder>
             </widget>
            </item>
            <item>
@@ -225,7 +220,7 @@
            <bool>false</bool>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>2</number>
           </property>
           <widget class="QWidget" name="TabInfo">
            <property name="cursor">
@@ -537,6 +532,68 @@ p, li { white-space: pre-wrap; }
             </item>
            </layout>
           </widget>
+          <widget class="QWidget" name="tabWhatToTest">
+           <property name="autoFillBackground">
+            <bool>false</bool>
+           </property>
+           <property name="styleSheet">
+            <string notr="true"/>
+           </property>
+           <attribute name="title">
+            <string>What to test</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_8">
+            <item>
+             <widget class="QToolBox" name="toolBoxWhatToTest">
+              <property name="currentIndex">
+               <number>0</number>
+              </property>
+              <widget class="QWidget" name="toolBoxNegativeKarma">
+               <property name="geometry">
+                <rect>
+                 <x>0</x>
+                 <y>0</y>
+                 <width>712</width>
+                 <height>451</height>
+                </rect>
+               </property>
+               <attribute name="label">
+                <string>Updates with negative karma</string>
+               </attribute>
+               <layout class="QVBoxLayout" name="verticalLayout_9">
+                <item alignment="Qt::AlignTop">
+                 <widget class="QLabel" name="label_6">
+                  <property name="text">
+                   <string>It would be nice to re-test updates which has got negative karma. See these packages below.</string>
+                  </property>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QTreeWidget" name="treeWidget_negative_karma">
+                  <column>
+                   <property name="text">
+                    <string> </string>
+                   </property>
+                  </column>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+              <widget class="QWidget" name="toolBoxRunning">
+               <attribute name="label">
+                <string>Currently running applications</string>
+               </attribute>
+               <layout class="QVBoxLayout" name="verticalLayout_12"/>
+              </widget>
+              <widget class="QWidget" name="toolBoxFavorite">
+               <attribute name="label">
+                <string>Favorite packages</string>
+               </attribute>
+              </widget>
+             </widget>
+            </item>
+           </layout>
+          </widget>
          </widget>
         </item>
        </layout>
@@ -559,7 +616,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>1002</width>
-     <height>23</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -602,7 +659,6 @@ p, li { white-space: pre-wrap; }
   <tabstop>treeWidget_feedback</tabstop>
   <tabstop>availableBtn</tabstop>
   <tabstop>pkgList</tabstop>
-  <tabstop>tabWidget</tabstop>
   <tabstop>releaseComboBox</tabstop>
   <tabstop>installedBtn</tabstop>
  </tabstops>

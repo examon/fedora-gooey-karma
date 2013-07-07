@@ -95,6 +95,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.karmaCheckBox.stateChanged.connect(self.__populate_pkgList)
         self.ui.karmaUsernameEdit.textChanged.connect(self.__populate_pkgList)
         self.ui.sendBtn.clicked.connect(self.__send_comment)
+        self.ui.treeWidget_negative_karma.itemClicked.connect(self.__negative_karma_clicked)
 
         # Prepare threads
         self.bodhi_workers = []
@@ -213,8 +214,37 @@ class MainWindow(QtGui.QMainWindow):
     def __save_installed_pkg_list(self, pkg_object):
         message = "All installed packages has been loaded. [Fedora %s]" % pkg_object
         self.ui.statusBar.showMessage(message)
-        self.ui.searchEdit.setEnabled(True)
+        # Prepare What to test section
+        ## Negative karma
+        for key in self.__installed_updates:
+            update = self.__installed_updates[key]
+            update_item = None
+            for comment in update['formatted_comments']:
+                #  If we've got negative karma, show this update in list 
+                if comment['karma'] == -1:
+                    # Prepare line with update itself
+                    if  update_item is None:
+                        update_item = QtGui.QTreeWidgetItem()
+                        update_item.setText(0, str(update['itemlist_name']))
+                        self.ui.treeWidget_negative_karma.insertTopLevelItem(0, update_item)
+                        update_item.setExpanded(True)
 
+                    # Add comment as child to update 
+                    line = QtGui.QTreeWidgetItem()
+                    line.setText(0, str(comment['text']))
+                    update_item.insertChild(0, line)
+
+    def __negative_karma_clicked(self, item, column):
+        # Get package name even if comment selected
+        if item.parent() is not None:
+            item = item.parent()
+
+        # Set package name as search text
+        self.ui.searchEdit.setText(str(item.text(0)))
+
+    def __set_search_text(self, text):
+        self.ui.searchEdit.setText(str(text))
+            
     def __decode_dict(self, dictionary, decoding='utf-8', data_type=str):
         for key in dictionary:
             if isinstance(dictionary[key], data_type):
@@ -492,7 +522,7 @@ class MainWindow(QtGui.QMainWindow):
             for key in bodhi_update['bugs_by_id']:
                 bug = QtGui.QTreeWidgetItem()
                 bug.setText(0, str(key))
-                bug.setText(1, str(bodhi_update['bugs_by_id'][key]))
+                bug.setText(1, str(bodhi_update['bugs_by_id'][key].encode('utf-8')))
                 self.ui.treeWidget_bugs.insertTopLevelItem(0, bug)
 
         ## test cases

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui/mainwindow.ui'
 #
-# Created: Thu Jun 27 15:44:15 2013
+# Created: Sun Jul  7 02:19:46 2013
 #      by: pyside-uic 0.2.13 running on PySide 1.1.0
 #
 # WARNING! All changes made in this file will be lost!
@@ -241,6 +241,36 @@ class Ui_MainWindow(object):
         self.textHints.setObjectName("textHints")
         self.gridLayout_2.addWidget(self.textHints, 3, 0, 1, 1)
         self.tabWidget.addTab(self.TabComment, "")
+        self.tabWhatToTest = QtGui.QWidget()
+        self.tabWhatToTest.setAutoFillBackground(False)
+        self.tabWhatToTest.setStyleSheet("")
+        self.tabWhatToTest.setObjectName("tabWhatToTest")
+        self.verticalLayout_8 = QtGui.QVBoxLayout(self.tabWhatToTest)
+        self.verticalLayout_8.setObjectName("verticalLayout_8")
+        self.toolBoxWhatToTest = QtGui.QToolBox(self.tabWhatToTest)
+        self.toolBoxWhatToTest.setObjectName("toolBoxWhatToTest")
+        self.toolBoxNegativeKarma = QtGui.QWidget()
+        self.toolBoxNegativeKarma.setGeometry(QtCore.QRect(0, 0, 712, 451))
+        self.toolBoxNegativeKarma.setObjectName("toolBoxNegativeKarma")
+        self.verticalLayout_9 = QtGui.QVBoxLayout(self.toolBoxNegativeKarma)
+        self.verticalLayout_9.setObjectName("verticalLayout_9")
+        self.label_6 = QtGui.QLabel(self.toolBoxNegativeKarma)
+        self.label_6.setObjectName("label_6")
+        self.verticalLayout_9.addWidget(self.label_6)
+        self.treeWidget_negative_karma = QtGui.QTreeWidget(self.toolBoxNegativeKarma)
+        self.treeWidget_negative_karma.setObjectName("treeWidget_negative_karma")
+        self.verticalLayout_9.addWidget(self.treeWidget_negative_karma)
+        self.toolBoxWhatToTest.addItem(self.toolBoxNegativeKarma, "")
+        self.toolBoxRunning = QtGui.QWidget()
+        self.toolBoxRunning.setObjectName("toolBoxRunning")
+        self.verticalLayout_12 = QtGui.QVBoxLayout(self.toolBoxRunning)
+        self.verticalLayout_12.setObjectName("verticalLayout_12")
+        self.toolBoxWhatToTest.addItem(self.toolBoxRunning, "")
+        self.toolBoxFavorite = QtGui.QWidget()
+        self.toolBoxFavorite.setObjectName("toolBoxFavorite")
+        self.toolBoxWhatToTest.addItem(self.toolBoxFavorite, "")
+        self.verticalLayout_8.addWidget(self.toolBoxWhatToTest)
+        self.tabWidget.addTab(self.tabWhatToTest, "")
         self.horizontalLayout_2.addWidget(self.tabWidget)
         self.statusList = QtGui.QListWidget(self.splitter_5)
         self.statusList.setSelectionMode(QtGui.QAbstractItemView.NoSelection)
@@ -248,7 +278,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.addWidget(self.splitter_5)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtGui.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1002, 23))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1002, 21))
         self.menubar.setObjectName("menubar")
         self.menuFile = QtGui.QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")
@@ -268,8 +298,9 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuHelp.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(2)
         self.karmaBox.setCurrentIndex(1)
+        self.toolBoxWhatToTest.setCurrentIndex(0)
         QtCore.QObject.connect(self.karmaCheckBox, QtCore.SIGNAL("toggled(bool)"), self.karmaUsernameEdit.setVisible)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         MainWindow.setTabOrder(self.karmaBox, self.commentEdit)
@@ -283,8 +314,7 @@ class Ui_MainWindow(object):
         MainWindow.setTabOrder(self.treeWidget_related_packages, self.treeWidget_feedback)
         MainWindow.setTabOrder(self.treeWidget_feedback, self.availableBtn)
         MainWindow.setTabOrder(self.availableBtn, self.pkgList)
-        MainWindow.setTabOrder(self.pkgList, self.tabWidget)
-        MainWindow.setTabOrder(self.tabWidget, self.releaseComboBox)
+        MainWindow.setTabOrder(self.pkgList, self.releaseComboBox)
         MainWindow.setTabOrder(self.releaseComboBox, self.installedBtn)
 
     def retranslateUi(self, MainWindow):
@@ -332,6 +362,12 @@ class Ui_MainWindow(object):
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Have you taken a look at <span style=\" font-weight:600;\">bugs</span>?</p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">If you want to give <span style=\" font-weight:600;\">negative</span> karma - are you sure that<span style=\" font-weight:600;\"> this component</span> makes <span style=\" font-weight:600;\">problems</span>?</p></body></html>", None, QtGui.QApplication.UnicodeUTF8))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.TabComment), QtGui.QApplication.translate("MainWindow", "Add comment and karma", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_6.setText(QtGui.QApplication.translate("MainWindow", "It would be nice to re-test updates which has got negative karma. See these packages below.", None, QtGui.QApplication.UnicodeUTF8))
+        self.treeWidget_negative_karma.headerItem().setText(0, QtGui.QApplication.translate("MainWindow", " ", None, QtGui.QApplication.UnicodeUTF8))
+        self.toolBoxWhatToTest.setItemText(self.toolBoxWhatToTest.indexOf(self.toolBoxNegativeKarma), QtGui.QApplication.translate("MainWindow", "Updates with negative karma", None, QtGui.QApplication.UnicodeUTF8))
+        self.toolBoxWhatToTest.setItemText(self.toolBoxWhatToTest.indexOf(self.toolBoxRunning), QtGui.QApplication.translate("MainWindow", "Currently running applications", None, QtGui.QApplication.UnicodeUTF8))
+        self.toolBoxWhatToTest.setItemText(self.toolBoxWhatToTest.indexOf(self.toolBoxFavorite), QtGui.QApplication.translate("MainWindow", "Favorite packages", None, QtGui.QApplication.UnicodeUTF8))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabWhatToTest), QtGui.QApplication.translate("MainWindow", "What to test", None, QtGui.QApplication.UnicodeUTF8))
         self.statusList.setSortingEnabled(False)
         self.menuFile.setTitle(QtGui.QApplication.translate("MainWindow", "File", None, QtGui.QApplication.UnicodeUTF8))
         self.menuHelp.setTitle(QtGui.QApplication.translate("MainWindow", "Help", None, QtGui.QApplication.UnicodeUTF8))
