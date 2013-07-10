@@ -1,6 +1,6 @@
 Name:           fedora-gooey-karma
-Version:        0
-Release:        0.1%{?dist}
+Version:        0.1
+Release:        1%{?dist}
 Summary:        GUI tool for adding karma to Bodhi system. Similar to fedora-easy-karma.
 
 Group:          Development/Tools
@@ -47,5 +47,5 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Thu Jul 10 2013 Branislav Blaskovic <branislav@blaskovic.sk> - 0-0.1
+* Thu Jul 10 2013 Branislav Blaskovic <branislav@blaskovic.sk> - 0.1-1
 - Initial spec file
