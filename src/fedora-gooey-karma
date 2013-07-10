@@ -47,6 +47,7 @@ from bodhiworker import BodhiWorker
 class MainWindow(QtGui.QMainWindow):
 
     __BUGZILLA_REDHAT_URL = "http://bugzilla.redhat.com/show_bug.cgi?id="
+    __PACKAGE_INFO_URL = "https://apps.fedoraproject.org/packages/"
     __FEDORAPEOPLE_TESTCASE_URL = "https://fedoraproject.org/wiki/QA:Testcase_"
     __FEDORA_RELEASES = [ 'Fedora 19', 'Fedora 18', 'Fedora 17' ]
     __BODHI_WORKERS_COUNT = 15
@@ -95,6 +96,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.availableBtn.clicked.connect(self.__show_available)
         self.ui.loadPackagesBtn.clicked.connect(self.__start_pkg_worker)
         self.ui.treeWidget_bugs.itemDoubleClicked.connect(self.__show_bug_in_browser)
+        self.ui.treeWidget_related_packages.itemDoubleClicked.connect(self.__show_relevant_pkg_in_browser)
         self.ui.treeWidget_test_cases.itemDoubleClicked.connect(self.__show_testcase_in_browser)
         self.ui.karmaCheckBox.stateChanged.connect(self.__populate_pkgList)
         self.ui.karmaUsernameEdit.textChanged.connect(self.__populate_pkgList)
@@ -216,6 +218,10 @@ class MainWindow(QtGui.QMainWindow):
     def __show_bug_in_browser(self):
         bug_id = self.ui.treeWidget_bugs.currentItem().text(0)
         webbrowser.open_new_tab("%s%s" % (self.__BUGZILLA_REDHAT_URL, bug_id))
+
+    def __show_relevant_pkg_in_browser(self):
+        pkg_name = self.ui.treeWidget_related_packages.currentItem().text(0).lstrip().rstrip()
+        webbrowser.open_new_tab("%s%s" % (self.__PACKAGE_INFO_URL, pkg_name))
 
     def __show_bodhi_update_in_browser(self):
         update = self.__get_bodhi_update()
@@ -465,6 +471,7 @@ class MainWindow(QtGui.QMainWindow):
                 rel_pkg = bodhi_update['relevant_packages']['others'][key]
                 pkg = QtGui.QTreeWidgetItem()
                 pkg.setText(0, str(rel_pkg.name))
+                pkg.setToolTip(0, rel_pkg.description)
                 item_others.insertChild(0, pkg)
 
             ### Desktop pkgs category
@@ -476,6 +483,7 @@ class MainWindow(QtGui.QMainWindow):
                 rel_pkg = bodhi_update['relevant_packages']['desktop'][key]
                 pkg = QtGui.QTreeWidgetItem()
                 pkg.setText(0, str(rel_pkg.name))
+                pkg.setToolTip(0, rel_pkg.description)
                 item_desktop.insertChild(0, pkg)
 
 
