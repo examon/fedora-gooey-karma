@@ -100,6 +100,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.karmaUsernameEdit.textChanged.connect(self.__populate_pkgList)
         self.ui.sendBtn.clicked.connect(self.__send_comment)
         self.ui.treeWidget_negative_karma.itemClicked.connect(self.__negative_karma_clicked)
+        self.ui.pkg_settings_open_bodhi_update.clicked.connect(self.__show_bodhi_update_in_browser)
 
         # Prepare threads
         self.bodhi_workers = []
@@ -215,6 +216,12 @@ class MainWindow(QtGui.QMainWindow):
     def __show_bug_in_browser(self):
         bug_id = self.ui.treeWidget_bugs.currentItem().text(0)
         webbrowser.open_new_tab("%s%s" % (self.__BUGZILLA_REDHAT_URL, bug_id))
+
+    def __show_bodhi_update_in_browser(self):
+        update = self.__get_bodhi_update()
+        if not update:
+            return
+        webbrowser.open_new_tab(update['bodhi_url'])
 
     def __show_testcase_in_browser(self):
         testcase_name = self.ui.treeWidget_test_cases.currentItem().text(0).replace(' ', '_')
@@ -347,6 +354,20 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.availableBtn.setChecked(True)
         self.__populate_pkgList()
 
+    def __get_bodhi_update(self, pkg=None):
+        if self.ui.installedBtn.isChecked():
+            pkgList = self.__installed_updates
+        elif self.ui.availableBtn.isChecked():
+            pkgList = self.__available_updates
+        else:
+            return
+
+        if pkg == None:
+            return pkgList[self.ui.pkgList.currentItem().text()]
+        else:
+            return pkgList[pkg]
+
+
     def __show_package_detail(self, pkg_item):
         """Shows package detail in the MainWindow.
 
@@ -361,16 +382,9 @@ class MainWindow(QtGui.QMainWindow):
         if pkg_item is None:
             return
 
-
         text_browser_string = ""
-        if self.ui.installedBtn.isChecked():
-            pkgList = self.__installed_updates
-        elif self.ui.availableBtn.isChecked():
-            pkgList = self.__available_updates
-        else:
-            return
 
-        bodhi_update = pkgList[pkg_item.text()]
+        bodhi_update = self.__get_bodhi_update()
 
         if bodhi_update is None:
             return
