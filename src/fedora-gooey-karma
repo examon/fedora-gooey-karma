@@ -47,6 +47,7 @@ from bodhiworker import BodhiWorker
 class MainWindow(QtGui.QMainWindow):
 
     __BUGZILLA_REDHAT_URL = "http://bugzilla.redhat.com/show_bug.cgi?id="
+    __PACKAGE_INFO_URL = "https://apps.fedoraproject.org/packages/"
     __FEDORAPEOPLE_TESTCASE_URL = "https://fedoraproject.org/wiki/QA:Testcase_"
     __FEDORA_RELEASES = [ 'Fedora 19', 'Fedora 18', 'Fedora 17' ]
     __BODHI_WORKERS_COUNT = 15
@@ -95,11 +96,13 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.availableBtn.clicked.connect(self.__show_available)
         self.ui.loadPackagesBtn.clicked.connect(self.__start_pkg_worker)
         self.ui.treeWidget_bugs.itemDoubleClicked.connect(self.__show_bug_in_browser)
+        self.ui.treeWidget_related_packages.itemDoubleClicked.connect(self.__show_relevant_pkg_in_browser)
         self.ui.treeWidget_test_cases.itemDoubleClicked.connect(self.__show_testcase_in_browser)
         self.ui.karmaCheckBox.stateChanged.connect(self.__populate_pkgList)
         self.ui.karmaUsernameEdit.textChanged.connect(self.__populate_pkgList)
         self.ui.sendBtn.clicked.connect(self.__send_comment)
         self.ui.treeWidget_negative_karma.itemClicked.connect(self.__negative_karma_clicked)
+        self.ui.pkg_settings_open_bodhi_update.clicked.connect(self.__show_bodhi_update_in_browser)
 
         # Prepare threads
         self.bodhi_workers = []
@@ -215,6 +218,16 @@ class MainWindow(QtGui.QMainWindow):
     def __show_bug_in_browser(self):
         bug_id = self.ui.treeWidget_bugs.currentItem().text(0)
         webbrowser.open_new_tab("%s%s" % (self.__BUGZILLA_REDHAT_URL, bug_id))
+
+    def __show_relevant_pkg_in_browser(self):
+        pkg_name = self.ui.treeWidget_related_packages.currentItem().text(0).lstrip().rstrip()
+        webbrowser.open_new_tab("%s%s" % (self.__PACKAGE_INFO_URL, pkg_name))
+
+    def __show_bodhi_update_in_browser(self):
+        update = self.__get_bodhi_update()
+        if not update:
+            return
+        webbrowser.open_new_tab(update['bodhi_url'])
 
     def __show_testcase_in_browser(self):
         testcase_name = self.ui.treeWidget_test_cases.currentItem().text(0).replace(' ', '_')
@@ -347,6 +360,20 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.availableBtn.setChecked(True)
         self.__populate_pkgList()
 
+    def __get_bodhi_update(self, pkg=None):
+        if self.ui.installedBtn.isChecked():
+            pkgList = self.__installed_updates
+        elif self.ui.availableBtn.isChecked():
+            pkgList = self.__available_updates
+        else:
+            return
+
+        if pkg == None:
+            return pkgList[self.ui.pkgList.currentItem().text()]
+        else:
+            return pkgList[pkg]
+
+
     def __show_package_detail(self, pkg_item):
         """Shows package detail in the MainWindow.
 
@@ -361,16 +388,9 @@ class MainWindow(QtGui.QMainWindow):
         if pkg_item is None:
             return
 
-
         text_browser_string = ""
-        if self.ui.installedBtn.isChecked():
-            pkgList = self.__installed_updates
-        elif self.ui.availableBtn.isChecked():
-            pkgList = self.__available_updates
-        else:
-            return
 
-        bodhi_update = pkgList[pkg_item.text()]
+        bodhi_update = self.__get_bodhi_update()
 
         if bodhi_update is None:
             return
@@ -390,21 +410,18 @@ class MainWindow(QtGui.QMainWindow):
         ## yum info
         yum_values = {}
         yum_format_string = (
-            "\n        Yum Info %(installed_version)s\n"
-            "        ========\n\n"
-            "           Name: %(name)s\n"
-            "           Arch: %(arch)s\n"
-            "        Version: %(version)s\n"
-            "        Release: %(release)s\n"
-            "           Size: %(size)s\n"
-            "           Repo: %(repo)s\n"
-            "      From repo: %(from_repo)s\n"
-            "        Summary: %(summary)s\n"
-            "            URL: %(url)s\n"
-            "        License: %(license)s\n\n"
-            "    Description:\n"
-            "    ------------\n\n"
-            "%(description)s\n\n"
+            "<b>Yum Info %(installed_version)s</b>\n"
+            "<b>           Name:</b> %(name)s\n"
+            "<b>           Arch:</b> %(arch)s\n"
+            "<b>        Version:</b> %(version)s\n"
+            "<b>        Release:</b> %(release)s\n"
+            "<b>           Size:</b> %(size)s\n"
+            "<b>           Repo:</b> %(repo)s\n"
+            "<b>      From repo:</b> %(from_repo)s\n"
+            "<b>        Summary:</b> %(summary)s\n"
+            "<b>            URL:</b> %(url)s\n"
+            "<b>        License:</b> %(license)s\n\n"
+            "\n\n"
         )
 
         # Grab yum info from installed package
@@ -454,6 +471,7 @@ class MainWindow(QtGui.QMainWindow):
                 rel_pkg = bodhi_update['relevant_packages']['others'][key]
                 pkg = QtGui.QTreeWidgetItem()
                 pkg.setText(0, str(rel_pkg.name))
+                pkg.setToolTip(0, rel_pkg.description)
                 item_others.insertChild(0, pkg)
 
             ### Desktop pkgs category
@@ -465,6 +483,7 @@ class MainWindow(QtGui.QMainWindow):
                 rel_pkg = bodhi_update['relevant_packages']['desktop'][key]
                 pkg = QtGui.QTreeWidgetItem()
                 pkg.setText(0, str(rel_pkg.name))
+                pkg.setToolTip(0, rel_pkg.description)
                 item_desktop.insertChild(0, pkg)
 
 
@@ -474,24 +493,19 @@ class MainWindow(QtGui.QMainWindow):
         ## bodhi info
         bodhi_values = {}
         bodhi_format_string = (
-            "\n      Bodhi Info\n"
-            "      ==========\n\n"
-            "         Status: %(status)s\n"
-            "        Release: %(release)s\n"
-            "      Update ID: %(updateid)s\n"
-            "         Builds: %(builds)s"
-            "      Requested: %(request)s\n"
-            "         Pushed: %(pushed)s\n"
-            " Date Submitted: %(date_submitted)s\n"
-            "  Date Released: %(date_released)s\n"
-            "      Submitted: %(submitter)s\n"
-            "          Karma: %(karma)s\n"
-            "   Stable Karma: %(stable_karma)s\n"
-            " Unstable Karma: %(unstable_karma)s\n\n"
-            "            URL: %(bodhi_url)s\n\n"
-            "        Details:\n"
-            "        --------\n\n"
-            "%(notes)s\n"
+            "<b>Bodhi Info</b>\n"
+            "<b>         Status:</b> %(status)s\n"
+            "<b>        Release:</b> %(release)s\n"
+            "<b>      Update ID:</b> %(updateid)s\n"
+            "<b>         Builds:</b> %(builds)s"
+            "<b>      Requested:</b> %(request)s\n"
+            "<b>         Pushed:</b> %(pushed)s\n"
+            "<b> Date Submitted:</b> %(date_submitted)s\n"
+            "<b>  Date Released:</b> %(date_released)s\n"
+            "<b>      Submitted:</b> %(submitter)s\n"
+            "<b>          Karma:</b> %(karma)s\n"
+            "<b>   Stable Karma:</b> %(stable_karma)s\n"
+            "<b> Unstable Karma:</b> %(unstable_karma)s\n"
         )
 
         bodhi_values['status'] = bodhi_update['status']
@@ -527,8 +541,21 @@ class MainWindow(QtGui.QMainWindow):
         # map fetched bodhi info on the bodhi_format_string
         # add to the final browser string
         text_browser_string += bodhi_format_string % bodhi_values
+
+        # first descriptions
+        descriptions_values = {}
+        descriptions_values['yum_description'] = yum_values['description']
+        descriptions_values['bodhi_notes'] = bodhi_values['notes']
+        text_browser_descriptions = (
+            "<b>Yum description</b></pre>"
+            "%(yum_description)s<pre>\n\n"
+            "<b>Bodhi update notes</b></pre>"
+            "%(bodhi_notes)s<pre>\n\n"
+        )
+        text_browser_desc_string = text_browser_descriptions % descriptions_values
+
         # set final browser string text
-        self.ui.textBrowser.setText(text_browser_string)
+        self.ui.textBrowser.setHtml('<pre>' + text_browser_desc_string + text_browser_string + '</pre>')
 
         ## bugs
         self.ui.treeWidget_bugs.clear()
