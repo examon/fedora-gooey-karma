@@ -294,7 +294,8 @@ class MainWindow(QtGui.QMainWindow):
                 self.__add_status_item(message2)
 
                 # Reload bodhi update
-                self.bodhi_workers_queue.put(self.__selected_pkglist_item['yum_package'])
+                self.bodhi_workers_queue.put(['package_update', self.__selected_pkglist_item['yum_package']])
+                self.ui.commentEdit.clear()
                 return
             except AuthError:
                 message = "Invalid username or password. Please try again."
