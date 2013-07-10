@@ -390,21 +390,18 @@ class MainWindow(QtGui.QMainWindow):
         ## yum info
         yum_values = {}
         yum_format_string = (
-            "\n        Yum Info %(installed_version)s\n"
-            "        ========\n\n"
-            "           Name: %(name)s\n"
-            "           Arch: %(arch)s\n"
-            "        Version: %(version)s\n"
-            "        Release: %(release)s\n"
-            "           Size: %(size)s\n"
-            "           Repo: %(repo)s\n"
-            "      From repo: %(from_repo)s\n"
-            "        Summary: %(summary)s\n"
-            "            URL: %(url)s\n"
-            "        License: %(license)s\n\n"
-            "    Description:\n"
-            "    ------------\n\n"
-            "%(description)s\n\n"
+            "<b>Yum Info %(installed_version)s</b>\n"
+            "<b>           Name:</b> %(name)s\n"
+            "<b>           Arch:</b> %(arch)s\n"
+            "<b>        Version:</b> %(version)s\n"
+            "<b>        Release:</b> %(release)s\n"
+            "<b>           Size:</b> %(size)s\n"
+            "<b>           Repo:</b> %(repo)s\n"
+            "<b>      From repo:</b> %(from_repo)s\n"
+            "<b>        Summary:</b> %(summary)s\n"
+            "<b>            URL:</b> %(url)s\n"
+            "<b>        License:</b> %(license)s\n\n"
+            "\n\n"
         )
 
         # Grab yum info from installed package
@@ -474,24 +471,19 @@ class MainWindow(QtGui.QMainWindow):
         ## bodhi info
         bodhi_values = {}
         bodhi_format_string = (
-            "\n      Bodhi Info\n"
-            "      ==========\n\n"
-            "         Status: %(status)s\n"
-            "        Release: %(release)s\n"
-            "      Update ID: %(updateid)s\n"
-            "         Builds: %(builds)s"
-            "      Requested: %(request)s\n"
-            "         Pushed: %(pushed)s\n"
-            " Date Submitted: %(date_submitted)s\n"
-            "  Date Released: %(date_released)s\n"
-            "      Submitted: %(submitter)s\n"
-            "          Karma: %(karma)s\n"
-            "   Stable Karma: %(stable_karma)s\n"
-            " Unstable Karma: %(unstable_karma)s\n\n"
-            "            URL: %(bodhi_url)s\n\n"
-            "        Details:\n"
-            "        --------\n\n"
-            "%(notes)s\n"
+            "<b>Bodhi Info</b>\n"
+            "<b>         Status:</b> %(status)s\n"
+            "<b>        Release:</b> %(release)s\n"
+            "<b>      Update ID:</b> %(updateid)s\n"
+            "<b>         Builds:</b> %(builds)s"
+            "<b>      Requested:</b> %(request)s\n"
+            "<b>         Pushed:</b> %(pushed)s\n"
+            "<b> Date Submitted:</b> %(date_submitted)s\n"
+            "<b>  Date Released:</b> %(date_released)s\n"
+            "<b>      Submitted:</b> %(submitter)s\n"
+            "<b>          Karma:</b> %(karma)s\n"
+            "<b>   Stable Karma:</b> %(stable_karma)s\n"
+            "<b> Unstable Karma:</b> %(unstable_karma)s\n"
         )
 
         bodhi_values['status'] = bodhi_update['status']
@@ -527,8 +519,21 @@ class MainWindow(QtGui.QMainWindow):
         # map fetched bodhi info on the bodhi_format_string
         # add to the final browser string
         text_browser_string += bodhi_format_string % bodhi_values
+
+        # first descriptions
+        descriptions_values = {}
+        descriptions_values['yum_description'] = yum_values['description']
+        descriptions_values['bodhi_notes'] = bodhi_values['notes']
+        text_browser_descriptions = (
+            "<b>Yum description</b></pre>"
+            "%(yum_description)s<pre>\n\n"
+            "<b>Bodhi update notes</b></pre>"
+            "%(bodhi_notes)s<pre>\n\n"
+        )
+        text_browser_desc_string = text_browser_descriptions % descriptions_values
+
         # set final browser string text
-        self.ui.textBrowser.setText(text_browser_string)
+        self.ui.textBrowser.setHtml('<pre>' + text_browser_desc_string + text_browser_string + '</pre>')
 
         ## bugs
         self.ui.treeWidget_bugs.clear()
