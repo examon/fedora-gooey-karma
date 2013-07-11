@@ -4,7 +4,7 @@
 #    Fedora Gooey Karma prototype
 #    based on the https://github.com/mkrizek/fedora-gooey-karma
 #
-#    Copyright (C) 2013 
+#    Copyright (C) 2013
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ from PySide import QtGui
 
 from customgui import CustomTreeWidgetItem
 from mainwindow_gui import Ui_MainWindow
-from packagesworker import PackagesWorker 
+from packagesworker import PackagesWorker
 from bodhiworker import BodhiWorker
 
 
@@ -71,7 +71,7 @@ class MainWindow(QtGui.QMainWindow):
         self.__load_and_set_fedora_releases()
         self.ui.tabWidget.setCurrentIndex(0)
         self.ui.karmaUsernameEdit.setVisible(False)
-        
+
         # TabBar - remove package's tabs and save it for later use
         self.__tabBar_info_backup = None
         self.__remove_package_tabs()
@@ -124,7 +124,7 @@ class MainWindow(QtGui.QMainWindow):
         if self.__tabBar_info_backup is None:
             self.__tabBar_info_backup = self.ui.tabWidget.widget(1)
         self.ui.tabWidget.removeTab(1)
-    
+
     def __show_message_box_about(self):
         text = (
             "<b>Fedora Gooey Karma</b> is a tool for browsing installed packages from updates-testing repository.<br><br>"
@@ -193,7 +193,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # Fill combo box
         for release in self.__FEDORA_RELEASES:
-            # Skip current release 
+            # Skip current release
             if package['version'] == release.split()[-1]:
                 continue
 
@@ -221,7 +221,10 @@ class MainWindow(QtGui.QMainWindow):
 
     def __show_relevant_pkg_in_browser(self):
         pkg_name = self.ui.treeWidget_related_packages.currentItem().text(0).lstrip().rstrip()
-        webbrowser.open_new_tab("%s%s" % (self.__PACKAGE_INFO_URL, pkg_name))
+        if not pkg_name == "Desktop packages" and not pkg_name == "Other packages":
+            # Do not need to open new tab when double clicked at "Desktop packages"
+            # or "Other packages"
+            webbrowser.open_new_tab("%s%s" % (self.__PACKAGE_INFO_URL, pkg_name))
 
     def __show_bodhi_update_in_browser(self):
         update = self.__get_bodhi_update()
@@ -242,7 +245,7 @@ class MainWindow(QtGui.QMainWindow):
             update = self.__installed_updates[key]
             update_item = None
             for comment in update['formatted_comments']:
-                #  If we've got negative karma, show this update in list 
+                #  If we've got negative karma, show this update in list
                 if comment['karma'] == -1:
                     # Prepare line with update itself
                     if  update_item is None:
@@ -251,7 +254,7 @@ class MainWindow(QtGui.QMainWindow):
                         self.ui.treeWidget_negative_karma.insertTopLevelItem(0, update_item)
                         update_item.setExpanded(True)
 
-                    # Add comment as child to update 
+                    # Add comment as child to update
                     line = QtGui.QTreeWidgetItem()
                     line.setText(0, str(comment['text']))
                     update_item.insertChild(0, line)
@@ -266,7 +269,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def __set_search_text(self, text):
         self.ui.searchEdit.setText(str(text))
-            
+
     def __decode_dict(self, dictionary, decoding='utf-8', data_type=str):
         for key in dictionary:
             if isinstance(dictionary[key], data_type):
@@ -301,7 +304,7 @@ class MainWindow(QtGui.QMainWindow):
                 # Send comment to bodhi
                 bc.comment(self.__selected_pkglist_item["title"], comment, karma=karma)
                 message = "Comment submitted successfully."
-                message2 = ("Reloading bodhi update for " 
+                message2 = ("Reloading bodhi update for "
                            + str(self.__selected_pkglist_item['itemlist_name']) + "...")
                 self.__add_status_item(message)
                 self.__add_status_item(message2)
@@ -443,7 +446,12 @@ class MainWindow(QtGui.QMainWindow):
             yum_values['arch'] = yum_pkg.arch
             yum_values['version'] = yum_pkg.version
             yum_values['release'] = yum_pkg.release
-            yum_values['size'] = yum_pkg.packagesize
+            if yum_pkg.packagesize > 1e6:
+                # It's better to display human readable number format
+                # for the package size, e.g. 1 M (as does $ yum info)
+                yum_values['size'] = "{:0.1f} M".format(round(yum_pkg.packagesize/1e6, 1))
+            else:
+                yum_values['size'] = "{:0.1f} k".format(round(yum_pkg.packagesize/1e3, 1))
             yum_values['repo'] = yum_pkg.repo
             yum_values['from_repo'] = yum_pkg.ui_from_repo
             yum_values['summary'] = yum_pkg.summary
@@ -461,7 +469,7 @@ class MainWindow(QtGui.QMainWindow):
 
             ## related packages
             self.ui.treeWidget_related_packages.clear()
-            
+
             ### Others pkgs category
             item_others = QtGui.QTreeWidgetItem()
             item_others.setText(0, "Other packages")
@@ -586,12 +594,18 @@ class MainWindow(QtGui.QMainWindow):
         if comments:
             for i in comments:
                 comment = CustomTreeWidgetItem()
-                # Set color for karma 
+                comment_font = comment.font(1)
+
+                # Set color and font weight for karma
                 if i['karma'] == 1:
                     comment.setForeground(1, green_brush)
+                    comment_font.setBold(True)
                 if i['karma'] == -1:
                     comment.setForeground(1, red_brush)
+                    comment_font.setBold(True)
 
+                # Set font
+                comment.setFont(1, comment_font)
                 # Set vertical alignment to Top
                 comment.setTextAlignment(0, QtCore.Qt.AlignTop)
                 comment.setTextAlignment(1, QtCore.Qt.AlignTop)

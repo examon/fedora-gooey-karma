@@ -71,16 +71,16 @@ class BodhiWorker(QtCore.QThread):
 
             self.queue.task_done()
 
-    def __get_relevant_packages(self, package):    
+    def __get_relevant_packages(self, package):
         pkgs = {}
         pkgs['desktop'] = {}
         pkgs['others'] = {}
-        
+
         # TODO: Should be rewritten to pure python code
         try:
-            p = subprocess.Popen('repoquery -q --qf "%{name}" --whatrequires ' + str(package), 
+            p = subprocess.Popen('repoquery -q --qf "%{name}" --whatrequires ' + str(package),
                                  shell=True,
-                                 stdout=subprocess.PIPE, 
+                                 stdout=subprocess.PIPE,
                                  stderr=subprocess.STDOUT)
 
             for line in p.stdout.readlines():
@@ -94,11 +94,11 @@ class BodhiWorker(QtCore.QThread):
                             if re.search('^/usr/share/applications/(.*).desktop$', filename):
                                 category = 'desktop'
                                 break
-                                
+
                         pkgs[category][name] = installed_pkg
         except IOError, e:
             print "BodhiWorker.__get_relevant_packages: %s" % str(e)
-            
+
 
         return pkgs
 
@@ -131,7 +131,7 @@ class BodhiWorker(QtCore.QThread):
         if len(data['bugs']):
             for bug in data['bugs']:
                 bugs[bug['bz_id']] = bug['title']
-        
+
         return bugs
 
     def __get_url(self, data):
