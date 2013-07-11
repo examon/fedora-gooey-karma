@@ -77,24 +77,28 @@ class BodhiWorker(QtCore.QThread):
         pkgs['others'] = {}
         
         # TODO: Should be rewritten to pure python code
-        p = subprocess.Popen('repoquery -q --qf "%{name}" --whatrequires ' + str(package), 
-                             shell=True,
-                             stdout=subprocess.PIPE, 
-                             stderr=subprocess.STDOUT)
+        try:
+            p = subprocess.Popen('repoquery -q --qf "%{name}" --whatrequires ' + str(package), 
+                                 shell=True,
+                                 stdout=subprocess.PIPE, 
+                                 stderr=subprocess.STDOUT)
 
-        for line in p.stdout.readlines():
-            name = line.lstrip().rstrip()
-            for installed_pkg in self.installed_packages:
-                if installed_pkg.name == name:
-                    # Which category is it?
-                    category = 'others'
-                    ## Search for desktop file
-                    for filename in installed_pkg.filelist:
-                        if re.search('^/usr/share/applications/(.*).desktop$', filename):
-                            category = 'desktop'
-                            break
-                            
-                    pkgs[category][name] = installed_pkg
+            for line in p.stdout.readlines():
+                name = line.lstrip().rstrip()
+                for installed_pkg in self.installed_packages:
+                    if installed_pkg.name == name:
+                        # Which category is it?
+                        category = 'others'
+                        ## Search for desktop file
+                        for filename in installed_pkg.filelist:
+                            if re.search('^/usr/share/applications/(.*).desktop$', filename):
+                                category = 'desktop'
+                                break
+                                
+                        pkgs[category][name] = installed_pkg
+        except IOError, e:
+            print "BodhiWorker.__get_relevant_packages: %s" % str(e)
+            
 
         return pkgs
 

@@ -9,7 +9,7 @@ fedora-gooey-karma provides similar functionality to the fedora-easy-karma via G
 ## Dependences
 
     python
-    pyside
+    python-pyside
     yum
     yum-utils
     bodhi-client

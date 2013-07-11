@@ -3,7 +3,7 @@
 
 
 name = fedora-gooey-karma
-prefix = /usr/local
+prefix = /usr
 bindir = $(prefix)/bin
 
 all:
