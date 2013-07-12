@@ -4,7 +4,7 @@
 #    Fedora Gooey Karma prototype
 #    based on the https://github.com/mkrizek/fedora-gooey-karma
 #
-#    Copyright (C) 2013 
+#    Copyright (C) 2013
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ class PackagesWorker(QtCore.QThread):
 
     def __init__(self, queue, bodhi_workers_queue, bodhi_workers_count, parent=None):
         super(PackagesWorker, self).__init__(parent)
-        
+
         self.queue = queue
         self.bodhi_workers_queue = bodhi_workers_queue
         self.bodhi_workers_count = bodhi_workers_count
@@ -73,7 +73,7 @@ class PackagesWorker(QtCore.QThread):
     def run(self):
         while True:
             releasever, max_days = self.queue.get()
-            
+
             # Start loading packages
             self.load_installed_packages_start.emit(self)
             self.load_installed(releasever, max_days)
@@ -94,7 +94,7 @@ class PackagesWorker(QtCore.QThread):
         Args:
             releasever: Fedora release version number (e.g. 18).
         """
-        
+
         # Load from yum rpmdb all installed packages
         self.installed_packages = self.yb.rpmdb.returnPackages()
         # Send it to all bodhi_workers
