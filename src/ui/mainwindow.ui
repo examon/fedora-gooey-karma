@@ -196,7 +196,7 @@
              <item>
               <widget class="QPushButton" name="loadPackagesBtn">
                <property name="text">
-                <string>Load Packages</string>
+                <string>Reload packages</string>
                </property>
               </widget>
              </item>
@@ -226,7 +226,7 @@
            <string notr="true"/>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tabWhatToTest">
            <property name="autoFillBackground">
@@ -272,7 +272,7 @@ p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Sans Serif'; font-size:10pt; font-weight:400; font-style:normal;&quot;&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Welcome to&lt;span style=&quot; font-weight:600;&quot;&gt; Fedora Gooey Karma&lt;/span&gt; tool which helps you with testing new updates for your Fedora.&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;To load updates, press lower-left &lt;span style=&quot; font-weight:600;&quot;&gt;Load packages&lt;/span&gt; button. If you are not sure what you should test, wait until all packages are loaded and see sections below this text.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;To load updates, press lower-left &lt;span style=&quot; font-weight:600;&quot;&gt;Reload packages&lt;/span&gt; button. If you are not sure what you should test, wait until all packages are loaded and see sections below this text.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                   </property>
                  </widget>
                 </item>
@@ -314,8 +314,8 @@ p, li { white-space: pre-wrap; }
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>96</width>
-                 <height>26</height>
+                 <width>100</width>
+                 <height>30</height>
                 </rect>
                </property>
                <attribute name="label">
@@ -328,8 +328,8 @@ p, li { white-space: pre-wrap; }
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>96</width>
-                 <height>26</height>
+                 <width>100</width>
+                 <height>30</height>
                 </rect>
                </property>
                <attribute name="label">
@@ -357,7 +357,7 @@ p, li { white-space: pre-wrap; }
                <enum>QTabWidget::East</enum>
               </property>
               <property name="currentIndex">
-               <number>0</number>
+               <number>2</number>
               </property>
               <widget class="QWidget" name="tabPkg_info">
                <attribute name="title">

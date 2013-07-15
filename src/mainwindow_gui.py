@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui/mainwindow.ui'
 #
-# Created: Wed Jul 10 21:19:55 2013
+# Created: Mon Jul 15 23:29:58 2013
 #      by: pyside-uic 0.2.13 running on PySide 1.1.0
 #
 # WARNING! All changes made in this file will be lost!
@@ -152,13 +152,13 @@ class Ui_MainWindow(object):
         self.verticalLayout_9.addWidget(self.treeWidget_negative_karma)
         self.toolBoxWhatToTest.addItem(self.toolBoxNegativeKarma, "")
         self.toolBoxRunning = QtGui.QWidget()
-        self.toolBoxRunning.setGeometry(QtCore.QRect(0, 0, 96, 26))
+        self.toolBoxRunning.setGeometry(QtCore.QRect(0, 0, 100, 30))
         self.toolBoxRunning.setObjectName("toolBoxRunning")
         self.verticalLayout_12 = QtGui.QVBoxLayout(self.toolBoxRunning)
         self.verticalLayout_12.setObjectName("verticalLayout_12")
         self.toolBoxWhatToTest.addItem(self.toolBoxRunning, "")
         self.toolBoxFavorite = QtGui.QWidget()
-        self.toolBoxFavorite.setGeometry(QtCore.QRect(0, 0, 96, 26))
+        self.toolBoxFavorite.setGeometry(QtCore.QRect(0, 0, 100, 30))
         self.toolBoxFavorite.setObjectName("toolBoxFavorite")
         self.toolBoxWhatToTest.addItem(self.toolBoxFavorite, "")
         self.verticalLayout_8.addWidget(self.toolBoxWhatToTest)
@@ -337,9 +337,9 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuHelp.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
         self.toolBoxWhatToTest.setCurrentIndex(0)
-        self.tabWidget_2.setCurrentIndex(0)
+        self.tabWidget_2.setCurrentIndex(2)
         self.karmaBox.setCurrentIndex(1)
         QtCore.QObject.connect(self.karmaCheckBox, QtCore.SIGNAL("toggled(bool)"), self.karmaUsernameEdit.setVisible)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -361,14 +361,14 @@ class Ui_MainWindow(object):
         self.pkgList.setSortingEnabled(True)
         self.label_4.setText(QtGui.QApplication.translate("MainWindow", "Updated for last", None, QtGui.QApplication.UnicodeUTF8))
         self.label_5.setText(QtGui.QApplication.translate("MainWindow", "days", None, QtGui.QApplication.UnicodeUTF8))
-        self.loadPackagesBtn.setText(QtGui.QApplication.translate("MainWindow", "Load Packages", None, QtGui.QApplication.UnicodeUTF8))
+        self.loadPackagesBtn.setText(QtGui.QApplication.translate("MainWindow", "Reload packages", None, QtGui.QApplication.UnicodeUTF8))
         self.textBrowser_2.setHtml(QtGui.QApplication.translate("MainWindow", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
 "p, li { white-space: pre-wrap; }\n"
 "</style></head><body style=\" font-family:\'Sans Serif\'; font-size:10pt; font-weight:400; font-style:normal;\">\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Welcome to<span style=\" font-weight:600;\"> Fedora Gooey Karma</span> tool which helps you with testing new updates for your Fedora.</p>\n"
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">To load updates, press lower-left <span style=\" font-weight:600;\">Load packages</span> button. If you are not sure what you should test, wait until all packages are loaded and see sections below this text.</p></body></html>", None, QtGui.QApplication.UnicodeUTF8))
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">To load updates, press lower-left <span style=\" font-weight:600;\">Reload packages</span> button. If you are not sure what you should test, wait until all packages are loaded and see sections below this text.</p></body></html>", None, QtGui.QApplication.UnicodeUTF8))
         self.toolBoxWhatToTest.setItemText(self.toolBoxWhatToTest.indexOf(self.toolBoxWelcome), QtGui.QApplication.translate("MainWindow", "Fedora Gooey Karma", None, QtGui.QApplication.UnicodeUTF8))
         self.label_6.setText(QtGui.QApplication.translate("MainWindow", "It would be nice to re-test updates which has got negative karma. See these packages below.", None, QtGui.QApplication.UnicodeUTF8))
         self.toolBoxWhatToTest.setItemText(self.toolBoxWhatToTest.indexOf(self.toolBoxNegativeKarma), QtGui.QApplication.translate("MainWindow", "Updates with negative karma", None, QtGui.QApplication.UnicodeUTF8))

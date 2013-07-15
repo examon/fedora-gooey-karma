@@ -199,6 +199,7 @@ class MainWindow(QtGui.QMainWindow):
     def __start_pkg_worker(self):
         # Get release and put it to queue
         # Package worker will get info about it
+        self.ui.loadPackagesBtn.setText('Loading packages')
         releasever = self.ui.releaseComboBox.currentText().split()[-1]
         self.pkg_worker_queue.put([releasever, self.ui.maxDays.value()])
 
@@ -259,6 +260,7 @@ class MainWindow(QtGui.QMainWindow):
     def __save_installed_pkg_list(self, pkg_object):
         message = "All installed packages has been loaded. [Fedora %s]" % pkg_object
         self.ui.statusBar.showMessage(message)
+        self.ui.loadPackagesBtn.setText('Reload packages')
         # Prepare What to test section
         ## Negative karma
         for key in self.__installed_updates:
