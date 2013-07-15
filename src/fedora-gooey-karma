@@ -28,13 +28,11 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '../share/fedora-gooey-karma'))
 
 import webbrowser
-import yum
 import Queue
 import rpm
 from fedora.client import AuthError
 from fedora.client import ServerError
 from fedora.client.bodhi import BodhiClient
-from yum.misc import getCacheDir
 from PySide import QtCore
 from PySide import QtGui
 
@@ -76,20 +74,16 @@ class MainWindow(QtGui.QMainWindow):
         self.__tabBar_info_backup = None
         self.__remove_package_tabs()
 
-        # YumBase and cache
-        self.yb = yum.YumBase()
-        cachedir = getCacheDir()
-        self.yb.repos.setCacheDir(cachedir)
-
         # Holders of data
         self.__installed_packages = {}
         self.__installed_updates = {}
         self.__available_updates = {}
 
         # Connects
+        ## Top main menu
         self.ui.actionQuit.triggered.connect(QtCore.QCoreApplication.instance().quit)
         self.ui.actionAbout.triggered.connect(self.__show_message_box_about)
-
+        ## Other connects
         self.ui.pkgList.currentItemChanged.connect(self.__show_package_detail)
         self.ui.searchEdit.textChanged.connect(self.__populate_pkgList)
         self.ui.installedBtn.clicked.connect(self.__show_installed)
@@ -104,7 +98,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.treeWidget_negative_karma.itemClicked.connect(self.__negative_karma_clicked)
         self.ui.pkg_settings_open_bodhi_update.clicked.connect(self.__show_bodhi_update_in_browser)
 
-        # Prepare threads
+        # Start Bodhi workers
         self.bodhi_workers = []
         for i in range(self.__BODHI_WORKERS_COUNT):
             b = BodhiWorker("bodhi_worker" + str(i), self.bodhi_workers_queue)
@@ -112,6 +106,7 @@ class MainWindow(QtGui.QMainWindow):
             b.start()
             self.bodhi_workers.append(b)
 
+        # Start package worker
         self.pkg_worker = PackagesWorker(self.pkg_worker_queue, self.bodhi_workers_queue, self.__BODHI_WORKERS_COUNT)
         self.pkg_worker.set_installed_packages.connect(self.__set_installed_packages)
         self.pkg_worker.start()
@@ -279,6 +274,7 @@ class MainWindow(QtGui.QMainWindow):
         comment = self.ui.commentEdit.toPlainText()
         karma = self.ui.karmaBox.currentText()
 
+        # Catch all problems
         if self.__selected_pkglist_item is None:
             message = "Comment not submitted: Could not get update from testing builds"
             self.__add_status_item(message)
@@ -292,6 +288,7 @@ class MainWindow(QtGui.QMainWindow):
             self.__add_status_item(message)
             return
 
+        # Prepare message for Bodhi system
         bc = BodhiClient()
         bc.username = self.ui.usernameEdit.text()
         bc.password = self.ui.passwordEdit.text()
@@ -299,6 +296,7 @@ class MainWindow(QtGui.QMainWindow):
         message = "Processing... Wait please..."
         self.__add_status_item(message)
 
+        # Try send it 3 times if ServerError occours
         for retry in range(3):
             try:
                 # Send comment to bodhi
@@ -332,7 +330,6 @@ class MainWindow(QtGui.QMainWindow):
         elif self.ui.availableBtn.isChecked():
             pkgList = self.__available_updates
 
-
         # Loop packages
         for key in pkgList.keys():
             update = pkgList[key]
@@ -354,16 +351,19 @@ class MainWindow(QtGui.QMainWindow):
                 self.ui.pkgList.addItem(update['itemlist_name'])
 
     def __show_installed(self):
+        # Show installed packages which are from testing repo
         self.ui.availableBtn.setChecked(False)
         self.ui.installedBtn.setChecked(True)
         self.__populate_pkgList()
 
     def __show_available(self):
+        # Show packages available to update
         self.ui.installedBtn.setChecked(False)
         self.ui.availableBtn.setChecked(True)
         self.__populate_pkgList()
 
     def __get_bodhi_update(self, pkg=None):
+        # Get bodhi update according to selected package in pkg list
         if self.ui.installedBtn.isChecked():
             pkgList = self.__installed_updates
         elif self.ui.availableBtn.isChecked():
@@ -378,16 +378,6 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def __show_package_detail(self, pkg_item):
-        """Shows package detail in the MainWindow.
-
-        Updates all info in every widget when user click on the item in the pkgList.
-
-        Args:
-            pkg_item: A currently selected pkgList item widget.
-
-        Returns:
-            Returns when pkg_item is None.
-        """
         if pkg_item is None:
             return
 
@@ -405,7 +395,6 @@ class MainWindow(QtGui.QMainWindow):
 
         # Switch tabs to info tab
         self.ui.tabWidget.setCurrentIndex(1)
-
 
         ## title
         self.ui.pkgNameLabel.setText(bodhi_update['itemlist_name'])
@@ -440,7 +429,7 @@ class MainWindow(QtGui.QMainWindow):
             yum_pkg = None
 
         if yum_pkg is not None:
-            # if we got yum package
+            # If we got yum package
             # fetch info from yum_pkg
             yum_values['name'] = yum_pkg.name
             yum_values['arch'] = yum_pkg.arch
@@ -461,13 +450,13 @@ class MainWindow(QtGui.QMainWindow):
             yum_values['installed_version'] = ''
             if bodhi_update.variant == 'available':
                 yum_values['installed_version'] = '(installed version)'
-            # decode all strings found in yum_values to utf-8
+            # Decode all strings found in yum_values to utf-8
             self.__decode_dict(yum_values)
-            # map fetched yum info on the yum_format_string
-            # add to the final browser string
+            # Map fetched yum info on the yum_format_string
+            # Add to the final browser string
             text_browser_string += yum_format_string % yum_values
 
-            ## related packages
+            ## Related packages
             self.ui.treeWidget_related_packages.clear()
 
             ### Others pkgs category
@@ -494,11 +483,10 @@ class MainWindow(QtGui.QMainWindow):
                 pkg.setToolTip(0, rel_pkg.description)
                 item_desktop.insertChild(0, pkg)
 
-
         else:
             print "Not in installed packages"
 
-        ## bodhi info
+        ## Bodhi info
         bodhi_values = {}
         bodhi_format_string = (
             "<b>Bodhi Info</b>\n"
@@ -525,10 +513,10 @@ class MainWindow(QtGui.QMainWindow):
             builds_string = ""
             for build_item in builds_list:
                 if not build_num:
-                    # first build name
+                    # First build name
                     builds_string += "%s\n" % build_item['nvr']
                 else:
-                    # second and next builds
+                    # Second and next builds
                     builds_string += "%s%s\n" % (17 * " ", build_item['nvr'])
                 build_num += 1
             bodhi_values['builds'] = builds_string
@@ -544,13 +532,13 @@ class MainWindow(QtGui.QMainWindow):
         bodhi_values['unstable_karma'] = bodhi_update['unstable_karma']
         bodhi_values['notes'] = bodhi_update['notes']
         bodhi_values['bodhi_url'] = bodhi_update['bodhi_url']
-        # decode all strings found in bodhi_values to utf-8
+        # Decode all strings found in bodhi_values to utf-8
         self.__decode_dict(bodhi_values)
-        # map fetched bodhi info on the bodhi_format_string
-        # add to the final browser string
+        # Map fetched bodhi info on the bodhi_format_string
+        # Add to the final browser string
         text_browser_string += bodhi_format_string % bodhi_values
 
-        # first descriptions
+        # First descriptions
         descriptions_values = {}
         descriptions_values['yum_description'] = yum_values['description']
         descriptions_values['bodhi_notes'] = bodhi_values['notes']
@@ -562,10 +550,10 @@ class MainWindow(QtGui.QMainWindow):
         )
         text_browser_desc_string = text_browser_descriptions % descriptions_values
 
-        # set final browser string text
+        # Set final browser string text
         self.ui.textBrowser.setHtml('<pre>' + text_browser_desc_string + text_browser_string + '</pre>')
 
-        ## bugs
+        ## Bugs
         self.ui.treeWidget_bugs.clear()
         if bodhi_update['bugs_by_id']:
             for key in bodhi_update['bugs_by_id']:
@@ -574,7 +562,7 @@ class MainWindow(QtGui.QMainWindow):
                 bug.setText(1, str(bodhi_update['bugs_by_id'][key].encode('utf-8')))
                 self.ui.treeWidget_bugs.insertTopLevelItem(0, bug)
 
-        ## test cases
+        ## Test cases
         self.ui.treeWidget_test_cases.clear()
         test_cases_list = bodhi_update['test_cases']
         if len(test_cases_list):
@@ -583,14 +571,15 @@ class MainWindow(QtGui.QMainWindow):
                 tc.setText(0, str(test_case_item))
                 self.ui.treeWidget_test_cases.insertTopLevelItem(0, tc)
 
-        ## feedback
+        ## Feedback
         self.ui.treeWidget_feedback.clear()
         comments = bodhi_update['formatted_comments']
 
-        ## prepare brushes
+        ## Prepare brushes
         green_brush = QtGui.QBrush(QtCore.Qt.darkGreen)
         red_brush = QtGui.QBrush(QtCore.Qt.red)
 
+        ## Load comments
         if comments:
             for i in comments:
                 comment = CustomTreeWidgetItem()
@@ -620,6 +609,8 @@ class MainWindow(QtGui.QMainWindow):
                 self.ui.treeWidget_feedback.insertTopLevelItem(0, comment)
 
     def exit_threads(self):
+        # Try to properly exit threads
+        # This still need work
         if not self.pkg_worker.isRunning():
             self.pkg_worker.exit()
 

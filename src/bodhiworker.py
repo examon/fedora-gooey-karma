@@ -148,18 +148,7 @@ class BodhiWorker(QtCore.QThread):
         return []
 
     def __get_comments(self, data):
-        """Fetches user comments from the data.
-
-        Loads all user freedback info, e.g. comments, karma, username.
-
-        Args:
-            data: A dictionary containing Bodhi client query output for each package (see: testing_builds).
-
-        Returns:
-            comments: A list of lists where earch sublist represents feedback for one package.
-
-                      comments = [ ["Feedback string", "author nickname", int(karma)], ... ]
-        """
+        # Get comments and rewrite it to better formatted dict
         comments = []
         i = 1
         if len(data['comments']):

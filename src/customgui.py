@@ -28,6 +28,8 @@ class CustomTreeWidgetItem(QtGui.QTreeWidgetItem):
         QtGui.QTreeWidgetItem.__init__(self, parent)
 
     def __lt__(self, otherItem):
+        # Overwritting this method to be able to sort
+        # items by numbers
         column = self.treeWidget().sortColumn()
         try:
             return float( self.text(column) ) > float( otherItem.text(column) )
