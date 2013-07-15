@@ -47,6 +47,7 @@ class MainWindow(QtGui.QMainWindow):
     __BUGZILLA_REDHAT_URL = "http://bugzilla.redhat.com/show_bug.cgi?id="
     __PACKAGE_INFO_URL = "https://apps.fedoraproject.org/packages/"
     __FEDORAPEOPLE_TESTCASE_URL = "https://fedoraproject.org/wiki/QA:Testcase_"
+    __KOJI_PACKAGES_URL = "http://kojipkgs.fedoraproject.org//packages/"
     __FEDORA_RELEASES = [ 'Fedora 19', 'Fedora 18', 'Fedora 17' ]
     __BODHI_WORKERS_COUNT = 15
 
@@ -97,6 +98,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.sendBtn.clicked.connect(self.__send_comment)
         self.ui.treeWidget_negative_karma.itemClicked.connect(self.__negative_karma_clicked)
         self.ui.pkg_settings_open_bodhi_update.clicked.connect(self.__show_bodhi_update_in_browser)
+        self.ui.pkg_settings_download_source_rpm.clicked.connect(self.__download_source_rpm)
 
         # Start Bodhi workers
         self.bodhi_workers = []
@@ -226,6 +228,29 @@ class MainWindow(QtGui.QMainWindow):
         if not update:
             return
         webbrowser.open_new_tab(update['bodhi_url'])
+
+    def __download_source_rpm(self):
+        update = self.__get_bodhi_update()
+        if not update:
+            return
+
+        # We cannot use info from bodhi, because builds does not containes separated name/version/release
+        # Need to parse it
+        splitted = update['itemlist_name'].split('-')
+
+        # We need at least 3 items
+        if len(splitted) < 3:
+            return
+
+        # Get items from array
+        name = '-'.join(splitted[0:(len(splitted)-2)])
+        version = splitted[-2]
+        release = splitted[-1]
+
+        # Set-up url
+        url = self.__KOJI_PACKAGES_URL + "%s/%s/%s/src/%s.src.rpm" % (name, version, release, update['itemlist_name'])
+        # Maybe it would be nice to show Save dialog and save directly to hdd
+        webbrowser.open_new_tab(url)
 
     def __show_testcase_in_browser(self):
         testcase_name = self.ui.treeWidget_test_cases.currentItem().text(0).replace(' ', '_')
