@@ -226,7 +226,7 @@
            <string notr="true"/>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tabWhatToTest">
            <property name="autoFillBackground">
@@ -314,8 +314,8 @@ p, li { white-space: pre-wrap; }
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>100</width>
-                 <height>30</height>
+                 <width>96</width>
+                 <height>26</height>
                 </rect>
                </property>
                <attribute name="label">
@@ -328,8 +328,8 @@ p, li { white-space: pre-wrap; }
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>100</width>
-                 <height>30</height>
+                 <width>96</width>
+                 <height>26</height>
                 </rect>
                </property>
                <attribute name="label">
@@ -352,12 +352,12 @@ p, li { white-space: pre-wrap; }
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_4">
             <item alignment="Qt::AlignTop">
-             <widget class="QTabWidget" name="tabWidget_2">
+             <widget class="QTabWidget" name="tabWidget_side">
               <property name="tabPosition">
                <enum>QTabWidget::East</enum>
               </property>
               <property name="currentIndex">
-               <number>2</number>
+               <number>1</number>
               </property>
               <widget class="QWidget" name="tabPkg_info">
                <attribute name="title">

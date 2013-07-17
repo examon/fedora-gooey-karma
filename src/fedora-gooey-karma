@@ -69,6 +69,7 @@ class MainWindow(QtGui.QMainWindow):
         self.rpmTS = rpm.TransactionSet()
         self.__load_and_set_fedora_releases()
         self.ui.tabWidget.setCurrentIndex(0)
+        self.ui.tabWidget_side.setCurrentIndex(0)
         self.ui.karmaUsernameEdit.setVisible(False)
 
         # TabBar - remove package's tabs and save it for later use
