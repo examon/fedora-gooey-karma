@@ -57,6 +57,7 @@ class BodhiWorker(QtCore.QThread):
                     bodhi_update['test_cases'] = self.__get_testcases(bodhi_update)
                     bodhi_update['formatted_comments'] = self.__get_comments(bodhi_update)
                     bodhi_update['relevant_packages'] = self.__get_relevant_packages(package.name)
+                    bodhi_update['parsed_nvr'] = self.__parse_nvr(bodhi_update['itemlist_name'])
                     self.bodhi_query_done.emit([variant, bodhi_update])
 
             elif action == 'set_installed_packages':
@@ -70,6 +71,20 @@ class BodhiWorker(QtCore.QThread):
                 print "Bodhi worker: Unknown action"
 
             self.queue.task_done()
+
+    def __parse_nvr(self, nvr):
+        splitted = nvr.split('-')
+
+        # We need at least 3 items
+        if len(splitted) < 3:
+            return
+
+        # Get items from array
+        name = '-'.join(splitted[0:(len(splitted)-2)])
+        version = splitted[-2]
+        release = splitted[-1]
+
+        return {'name':name, 'version':version, 'release':release}
 
     def __get_relevant_packages(self, package):
         pkgs = {}

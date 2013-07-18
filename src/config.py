@@ -21,6 +21,7 @@
 #
 #    Author: Branislav Blaskovic <branislav@blaskovic.sk>
 
+import os
 import pickle
 
 class PackagesHolder:
@@ -57,19 +58,37 @@ class PackagesHolder:
 
     # Common methods
     def add_package(self, package):
+        package = package.strip()
+        if package == '':
+            return False
+
         if package not in self.__db:
             self.__db.append(package)
+            return True
+
+        return False
 
     def remove_package(self, package):
+        package = package.strip()
         try:
             self.__db.remove(package)
+            return True
         except:
             pass
+
+        return False
 
 
 class Config:
 
     def __init__(self):
+        self.__config_file = None
+        try:  
+            self.__config_file = os.environ["HOME"] + "/.fedora-gooey-karma"
+        except KeyError: 
+            print "Please set the environment variable HOME"
+
+
         self.ignored_packages = PackagesHolder()
         self.favorited_packages = PackagesHolder()
         self.__fas_name = ''
@@ -85,8 +104,31 @@ class Config:
     fas_name = property(get_fas_name, set_fas_name)
     fas_password = property(get_fas_password, set_fas_password)
 
+    def load_config(self):
+        # Loads config from home dir
+        obj = None
+        try:
+            f = open(self.__config_file, 'rb')
+            obj = pickle.load(f)
+            f.close()
+        except:
+            print "Cannot open config file " + self.__config_file
+
+
+        # If we have object from pickle file, assign it
+        if obj:
+            for attr in ['favorited_packages', 'ignored_packages', '__fas_name', '__fas_password']:
+                setattr(self, attr, getattr(obj, attr, None))
+
+
     def save_config(self):
         # Saves config to home dir
-        pass
+        try:
+            f = open(self.__config_file, 'wb')
+            pickle.dump(self, f)
+            f.close()
+        except:
+            print "Cannot open config file " + self.__config_file
+
 
 # vim: set expandtab ts=4 sts=4 sw=4 :

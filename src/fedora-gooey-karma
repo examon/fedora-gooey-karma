@@ -40,6 +40,7 @@ from customgui import CustomTreeWidgetItem
 from mainwindow_gui import Ui_MainWindow
 from packagesworker import PackagesWorker
 from bodhiworker import BodhiWorker
+from config import Config
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -61,6 +62,10 @@ class MainWindow(QtGui.QMainWindow):
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
+        # Config
+        self.config = Config()
+        self.config.load_config()
+
         # Prepare Queues
         self.bodhi_workers_queue = Queue.Queue()
         self.pkg_worker_queue = Queue.Queue()
@@ -70,7 +75,9 @@ class MainWindow(QtGui.QMainWindow):
         self.__load_and_set_fedora_releases()
         self.ui.tabWidget.setCurrentIndex(0)
         self.ui.tabWidget_side.setCurrentIndex(0)
+        self.ui.toolBoxWhatToTest.setCurrentIndex(0)
         self.ui.karmaUsernameEdit.setVisible(False)
+        self.__update_favorite_ignored_pkg_lists()
 
         # TabBar - remove package's tabs and save it for later use
         self.__tabBar_info_backup = None
@@ -85,7 +92,7 @@ class MainWindow(QtGui.QMainWindow):
         ## Top main menu
         self.ui.actionQuit.triggered.connect(QtCore.QCoreApplication.instance().quit)
         self.ui.actionAbout.triggered.connect(self.__show_message_box_about)
-        ## Other connects
+        ## Misc connects
         self.ui.pkgList.currentItemChanged.connect(self.__show_package_detail)
         self.ui.searchEdit.textChanged.connect(self.__populate_pkgList)
         self.ui.installedBtn.clicked.connect(self.__show_installed)
@@ -97,9 +104,14 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.karmaCheckBox.stateChanged.connect(self.__populate_pkgList)
         self.ui.karmaUsernameEdit.textChanged.connect(self.__populate_pkgList)
         self.ui.sendBtn.clicked.connect(self.__send_comment)
-        self.ui.treeWidget_negative_karma.itemClicked.connect(self.__negative_karma_clicked)
+        ## Package settings
         self.ui.pkg_settings_open_bodhi_update.clicked.connect(self.__show_bodhi_update_in_browser)
         self.ui.pkg_settings_download_source_rpm.clicked.connect(self.__download_source_rpm)
+        ## What to test toolbox
+        self.ui.tool_pkg_list_negative.itemClicked.connect(self.__negative_karma_clicked)
+        self.ui.toolBoxWhatToTest.currentChanged.connect(self.__move_toolbox_buttons)
+        self.ui.btn_tool_add_pkg.clicked.connect(self.__config_add_package)
+        self.ui.btn_tool_remove_pkg.clicked.connect(self.__config_remove_package)
 
         # Start Bodhi workers
         self.bodhi_workers = []
@@ -117,6 +129,60 @@ class MainWindow(QtGui.QMainWindow):
         # Pkg worker threads
         self.pkg_worker.load_installed_packages_done.connect(self.__save_installed_pkg_list)
         self.pkg_worker.load_installed_packages_start.connect(self.__installed_pkg_list_loading_info)
+
+    def __toolbox_current_tab(self):
+        # What is the currently selected toolbox?
+        if self.ui.toolBoxWhatToTest.currentIndex() == self.ui.toolBoxWhatToTest.count() -1:
+            return 'ignored'
+        else:
+            return 'favorite'
+
+    def __config_remove_package(self):
+        # Removes selected package
+        if self.__toolbox_current_tab() == 'ignored':
+            try:
+                self.config.ignored_packages.remove_package(self.ui.tool_pkg_list_ignored.currentItem().text(0))
+            except:
+                pass
+        else:
+            try:
+                self.config.favorited_packages.remove_package(self.ui.tool_pkg_list_favorite.currentItem().text(0))
+            except:
+                pass
+        self.config.save_config()
+        self.__update_favorite_ignored_pkg_lists()
+
+    def __config_add_package(self):
+        # Add package from lineedit to config according to selected toolbox
+        if self.__toolbox_current_tab() == 'ignored':
+            self.config.ignored_packages.add_package(self.ui.tool_pkg_name.text())
+        else:
+            self.config.favorited_packages.add_package(self.ui.tool_pkg_name.text())
+        self.__update_favorite_ignored_pkg_lists()
+        self.ui.tool_pkg_name.clear()
+        self.config.save_config()
+
+    def __update_favorite_ignored_pkg_lists(self):
+        self.ui.tool_pkg_list_ignored.clear()
+        self.ui.tool_pkg_list_favorite.clear()
+        # Favorite packages
+        for pkg in self.config.favorited_packages:
+            item = QtGui.QTreeWidgetItem()
+            item.setText(0, pkg)
+            self.ui.tool_pkg_list_favorite.insertTopLevelItem(0, item)
+        # Ignored packages
+        for pkg in self.config.ignored_packages:
+            item = QtGui.QTreeWidgetItem()
+            item.setText(0, pkg)
+            self.ui.tool_pkg_list_ignored.insertTopLevelItem(0, item)
+
+
+    def __move_toolbox_buttons(self, index):
+        ## Copy widget with pkg list tools to current index one
+        if self.__toolbox_current_tab() == 'ignored':
+            self.ui.toolBoxIgnoredLayout.addWidget(self.ui.tool_add_remove_pkg)
+        else:
+            self.ui.toolBoxFavoriteLayout.addWidget(self.ui.tool_add_remove_pkg)
 
     def __remove_package_tabs(self):
         if self.__tabBar_info_backup is None:
@@ -236,18 +302,9 @@ class MainWindow(QtGui.QMainWindow):
         if not update:
             return
 
-        # We cannot use info from bodhi, because builds does not containes separated name/version/release
-        # Need to parse it
-        splitted = update['itemlist_name'].split('-')
-
-        # We need at least 3 items
-        if len(splitted) < 3:
-            return
-
-        # Get items from array
-        name = '-'.join(splitted[0:(len(splitted)-2)])
-        version = splitted[-2]
-        release = splitted[-1]
+        name = update['parsed_nvr']['name']
+        version = update['parsed_nvr']['version']
+        release = update['parsed_nvr']['release']
 
         # Set-up url
         url = self.__KOJI_PACKAGES_URL + "%s/%s/%s/src/%s.src.rpm" % (name, version, release, update['itemlist_name'])
@@ -426,6 +483,9 @@ class MainWindow(QtGui.QMainWindow):
 
         ## title
         self.ui.pkgNameLabel.setText(bodhi_update['itemlist_name'])
+
+        # Fill in toolbox Add package line edit
+        self.ui.tool_pkg_name.setText(bodhi_update['parsed_nvr']['name'])
 
         ## yum info
         yum_values = {}

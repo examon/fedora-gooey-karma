@@ -226,7 +226,7 @@
            <string notr="true"/>
           </property>
           <property name="currentIndex">
-           <number>1</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="tabWhatToTest">
            <property name="autoFillBackground">
@@ -238,11 +238,11 @@
            <attribute name="title">
             <string>What to test</string>
            </attribute>
-           <layout class="QVBoxLayout" name="verticalLayout_8">
+           <layout class="QHBoxLayout" name="horizontalLayout_6">
             <item>
              <widget class="QToolBox" name="toolBoxWhatToTest">
               <property name="currentIndex">
-               <number>0</number>
+               <number>3</number>
               </property>
               <widget class="QWidget" name="toolBoxWelcome">
                <property name="geometry">
@@ -250,7 +250,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>704</width>
-                 <height>381</height>
+                 <height>352</height>
                 </rect>
                </property>
                <attribute name="label">
@@ -283,8 +283,8 @@ p, li { white-space: pre-wrap; }
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>612</width>
-                 <height>114</height>
+                 <width>704</width>
+                 <height>352</height>
                 </rect>
                </property>
                <attribute name="label">
@@ -299,10 +299,10 @@ p, li { white-space: pre-wrap; }
                  </widget>
                 </item>
                 <item>
-                 <widget class="QTreeWidget" name="treeWidget_negative_karma">
+                 <widget class="QTreeWidget" name="tool_pkg_list_negative">
                   <column>
                    <property name="text">
-                    <string/>
+                    <string>Package</string>
                    </property>
                   </column>
                  </widget>
@@ -314,27 +314,121 @@ p, li { white-space: pre-wrap; }
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>96</width>
-                 <height>26</height>
+                 <width>704</width>
+                 <height>352</height>
                 </rect>
                </property>
                <attribute name="label">
                 <string>Currently running applications</string>
                </attribute>
-               <layout class="QVBoxLayout" name="verticalLayout_12"/>
+               <layout class="QVBoxLayout" name="verticalLayout_12">
+                <item>
+                 <widget class="QTreeWidget" name="tool_pkg_list_running">
+                  <column>
+                   <property name="text">
+                    <string>Package</string>
+                   </property>
+                  </column>
+                 </widget>
+                </item>
+               </layout>
               </widget>
               <widget class="QWidget" name="toolBoxFavorite">
                <property name="geometry">
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>96</width>
-                 <height>26</height>
+                 <width>704</width>
+                 <height>352</height>
                 </rect>
                </property>
                <attribute name="label">
                 <string>Favorite packages</string>
                </attribute>
+               <layout class="QVBoxLayout" name="toolBoxFavoriteLayout">
+                <item>
+                 <widget class="QTreeWidget" name="tool_pkg_list_favorite">
+                  <column>
+                   <property name="text">
+                    <string>Package</string>
+                   </property>
+                  </column>
+                 </widget>
+                </item>
+                <item>
+                 <layout class="QHBoxLayout" name="horizontalLayout_7">
+                  <property name="topMargin">
+                   <number>0</number>
+                  </property>
+                  <item>
+                   <widget class="QWidget" name="tool_add_remove_pkg" native="true">
+                    <property name="minimumSize">
+                     <size>
+                      <width>0</width>
+                      <height>0</height>
+                     </size>
+                    </property>
+                    <layout class="QHBoxLayout" name="horizontalLayout_9">
+                     <item>
+                      <widget class="QPushButton" name="btn_tool_remove_pkg">
+                       <property name="text">
+                        <string>Remove selected package</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <spacer name="horizontalSpacer">
+                       <property name="orientation">
+                        <enum>Qt::Horizontal</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>40</width>
+                         <height>20</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                     <item>
+                      <widget class="QLineEdit" name="tool_pkg_name"/>
+                     </item>
+                     <item>
+                      <widget class="QPushButton" name="btn_tool_add_pkg">
+                       <property name="text">
+                        <string>Add package</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+               </layout>
+              </widget>
+              <widget class="QWidget" name="toolBoxIgnored">
+               <property name="geometry">
+                <rect>
+                 <x>0</x>
+                 <y>0</y>
+                 <width>704</width>
+                 <height>352</height>
+                </rect>
+               </property>
+               <attribute name="label">
+                <string>Ignored packages</string>
+               </attribute>
+               <layout class="QVBoxLayout" name="toolBoxIgnoredLayout">
+                <item>
+                 <widget class="QTreeWidget" name="tool_pkg_list_ignored">
+                  <column>
+                   <property name="text">
+                    <string>Package</string>
+                   </property>
+                  </column>
+                 </widget>
+                </item>
+               </layout>
               </widget>
              </widget>
             </item>
@@ -357,7 +451,7 @@ p, li { white-space: pre-wrap; }
                <enum>QTabWidget::East</enum>
               </property>
               <property name="currentIndex">
-               <number>1</number>
+               <number>2</number>
               </property>
               <widget class="QWidget" name="tabPkg_info">
                <attribute name="title">
