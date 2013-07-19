@@ -240,6 +240,25 @@ class MainWindow(QtGui.QMainWindow):
                 # Add update to list
                 self.ui.pkgList.addItem(data['itemlist_name'])
 
+        # Prepare What to test section
+        if variant in ['installed', 'available']:
+            # Negative karma
+            update_item = None
+            for comment in data['formatted_comments']:
+                #  If we've got negative karma, show this update in list
+                if comment['karma'] == -1:
+                    # Prepare line with update itself
+                    if  update_item is None:
+                        update_item = QtGui.QTreeWidgetItem()
+                        update_item.setText(0, str(data['itemlist_name']))
+                        self.ui.tool_pkg_list_negative.insertTopLevelItem(0, update_item)
+                        update_item.setExpanded(True)
+
+                    # Add comment as child to update
+                    line = QtGui.QTreeWidgetItem()
+                    line.setText(0, str(comment['text']))
+                    update_item.insertChild(0, line)
+
     def __set_installed_packages(self, packages):
         self.__add_status_item(str(len(packages)) + " installed packages on system")
         for pkg in packages:
@@ -319,25 +338,6 @@ class MainWindow(QtGui.QMainWindow):
         message = "All installed packages has been loaded. [Fedora %s]" % pkg_object
         self.ui.statusBar.showMessage(message)
         self.ui.loadPackagesBtn.setText('Reload packages')
-        # Prepare What to test section
-        ## Negative karma
-        for key in self.__installed_updates:
-            update = self.__installed_updates[key]
-            update_item = None
-            for comment in update['formatted_comments']:
-                #  If we've got negative karma, show this update in list
-                if comment['karma'] == -1:
-                    # Prepare line with update itself
-                    if  update_item is None:
-                        update_item = QtGui.QTreeWidgetItem()
-                        update_item.setText(0, str(update['itemlist_name']))
-                        self.ui.treeWidget_negative_karma.insertTopLevelItem(0, update_item)
-                        update_item.setExpanded(True)
-
-                    # Add comment as child to update
-                    line = QtGui.QTreeWidgetItem()
-                    line.setText(0, str(comment['text']))
-                    update_item.insertChild(0, line)
 
     def __negative_karma_clicked(self, item, column):
         # Get package name even if comment selected
