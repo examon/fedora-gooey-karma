@@ -62,6 +62,11 @@ class MainWindow(QtGui.QMainWindow):
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
+        # Holders of data
+        self.__installed_packages = {}
+        self.__installed_updates = {}
+        self.__available_updates = {}
+
         # Config
         self.config = Config()
         self.config.load_config()
@@ -82,11 +87,6 @@ class MainWindow(QtGui.QMainWindow):
         # TabBar - remove package's tabs and save it for later use
         self.__tabBar_info_backup = None
         self.__remove_package_tabs()
-
-        # Holders of data
-        self.__installed_packages = {}
-        self.__installed_updates = {}
-        self.__available_updates = {}
 
         # Connects
         ## Top main menu
@@ -109,6 +109,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.pkg_settings_download_source_rpm.clicked.connect(self.__download_source_rpm)
         ## What to test toolbox
         self.ui.tool_pkg_list_negative.itemClicked.connect(self.__negative_karma_clicked)
+        self.ui.tool_pkg_list_favorite.itemClicked.connect(self.__favorite_item_clicked)
         self.ui.toolBoxWhatToTest.currentChanged.connect(self.__move_toolbox_buttons)
         self.ui.btn_tool_add_pkg.clicked.connect(self.__config_add_package)
         self.ui.btn_tool_remove_pkg.clicked.connect(self.__config_remove_package)
@@ -165,11 +166,35 @@ class MainWindow(QtGui.QMainWindow):
     def __update_favorite_ignored_pkg_lists(self):
         self.ui.tool_pkg_list_ignored.clear()
         self.ui.tool_pkg_list_favorite.clear()
+
+        # Prepare list of package names
+        pkg_names = []
+        for key in self.__installed_updates.keys():
+            pkg_names.append(self.__installed_updates[key].parsed_nvr['name'])
+
+        # Top level items
+        def create_top_level_item(text, widget):
+            item = QtGui.QTreeWidgetItem()
+            item.setText(0, text)
+            widget.insertTopLevelItem(0, item)
+            item.setExpanded(True)
+            return item
+
+        # Top level items
+        ## Set names
+        fav_not_available = create_top_level_item('Bodhi update not available', self.ui.tool_pkg_list_favorite)
+        fav_available = create_top_level_item('Bodhi update available', self.ui.tool_pkg_list_favorite)
+
         # Favorite packages
         for pkg in self.config.favorited_packages:
             item = QtGui.QTreeWidgetItem()
             item.setText(0, pkg)
-            self.ui.tool_pkg_list_favorite.insertTopLevelItem(0, item)
+            # If this package name is in available packages
+            if pkg in pkg_names:
+                fav_available.addChild(item)
+            else:
+                fav_not_available.addChild(item)
+
         # Ignored packages
         for pkg in self.config.ignored_packages:
             item = QtGui.QTreeWidgetItem()
@@ -259,6 +284,10 @@ class MainWindow(QtGui.QMainWindow):
                     line.setText(0, str(comment['text']))
                     update_item.insertChild(0, line)
 
+            # If it is in favorited packages, update list
+            if data['parsed_nvr']['name'] in self.config.favorited_packages:
+                self.__update_favorite_ignored_pkg_lists()
+
     def __set_installed_packages(self, packages):
         self.__add_status_item(str(len(packages)) + " installed packages on system")
         for pkg in packages:
@@ -338,6 +367,12 @@ class MainWindow(QtGui.QMainWindow):
         message = "All installed packages has been loaded. [Fedora %s]" % pkg_object
         self.ui.statusBar.showMessage(message)
         self.ui.loadPackagesBtn.setText('Reload packages')
+
+    def __favorite_item_clicked(self, item, column):
+        # Get package name
+        # Do this only when package is selected (not the header text)
+        if item.parent() is not None:
+            self.ui.searchEdit.setText(str(item.text(0)))
 
     def __negative_karma_clicked(self, item, column):
         # Get package name even if comment selected
