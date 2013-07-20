@@ -333,11 +333,11 @@ class MainWindow(QtGui.QMainWindow):
         webbrowser.open_new_tab("%s%s" % (self.__BUGZILLA_REDHAT_URL, bug_id))
 
     def __show_relevant_pkg_in_browser(self):
-        pkg_name = self.ui.treeWidget_related_packages.currentItem().text(0).lstrip().rstrip()
-        if not pkg_name == "Desktop packages" and not pkg_name == "Other packages":
+        widget = self.ui.treeWidget_related_packages.currentItem()
+        if widget.parent() is not None:
             # Do not need to open new tab when double clicked at "Desktop packages"
-            # or "Other packages"
-            webbrowser.open_new_tab("%s%s" % (self.__PACKAGE_INFO_URL, pkg_name))
+            # or "Other packages", so affect childs only
+            webbrowser.open_new_tab("%s%s" % (self.__PACKAGE_INFO_URL, widget.text(0).strip()))
 
     def __show_bodhi_update_in_browser(self):
         update = self.__get_bodhi_update()
