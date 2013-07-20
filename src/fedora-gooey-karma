@@ -586,6 +586,7 @@ class MainWindow(QtGui.QMainWindow):
             item_others = QtGui.QTreeWidgetItem()
             item_others.setText(0, "Other packages")
             self.ui.treeWidget_related_packages.insertTopLevelItem(0, item_others)
+            item_others.setExpanded(True)
 
             for key in bodhi_update['relevant_packages']['others'].keys():
                 rel_pkg = bodhi_update['relevant_packages']['others'][key]
@@ -598,6 +599,7 @@ class MainWindow(QtGui.QMainWindow):
             item_desktop = QtGui.QTreeWidgetItem()
             item_desktop.setText(0, "Desktop packages")
             self.ui.treeWidget_related_packages.insertTopLevelItem(0, item_desktop)
+            item_desktop.setExpanded(True)
 
             for key in bodhi_update['relevant_packages']['desktop'].keys():
                 rel_pkg = bodhi_update['relevant_packages']['desktop'][key]
