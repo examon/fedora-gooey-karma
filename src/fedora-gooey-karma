@@ -41,7 +41,7 @@ from mainwindow_gui import Ui_MainWindow
 from packagesworker import PackagesWorker
 from bodhiworker import BodhiWorker
 from config import Config
-
+from toolbox import Toolbox
 
 class MainWindow(QtGui.QMainWindow):
 
@@ -64,12 +64,15 @@ class MainWindow(QtGui.QMainWindow):
 
         # Holders of data
         self.__installed_packages = {}
-        self.__installed_updates = {}
-        self.__available_updates = {}
+        self.installed_updates = {}
+        self.available_updates = {}
 
         # Config
         self.config = Config()
         self.config.load_config()
+
+        # Toolbox
+        self.toolbox = Toolbox(self)
 
         # Prepare Queues
         self.bodhi_workers_queue = Queue.Queue()
@@ -82,7 +85,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.tabWidget_side.setCurrentIndex(0)
         self.ui.toolBoxWhatToTest.setCurrentIndex(0)
         self.ui.karmaUsernameEdit.setVisible(False)
-        self.__update_favorite_ignored_pkg_lists()
+        self.toolbox.update_favorite_ignored_pkg_lists()
 
         # TabBar - remove package's tabs and save it for later use
         self.__tabBar_info_backup = None
@@ -108,11 +111,11 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.pkg_settings_open_bodhi_update.clicked.connect(self.__show_bodhi_update_in_browser)
         self.ui.pkg_settings_download_source_rpm.clicked.connect(self.__download_source_rpm)
         ## What to test toolbox
-        self.ui.tool_pkg_list_negative.itemClicked.connect(self.__negative_karma_clicked)
-        self.ui.tool_pkg_list_favorite.itemClicked.connect(self.__favorite_item_clicked)
-        self.ui.toolBoxWhatToTest.currentChanged.connect(self.__move_toolbox_buttons)
-        self.ui.btn_tool_add_pkg.clicked.connect(self.__config_add_package)
-        self.ui.btn_tool_remove_pkg.clicked.connect(self.__config_remove_package)
+        self.ui.tool_pkg_list_negative.itemClicked.connect(self.toolbox.negative_karma_clicked)
+        self.ui.tool_pkg_list_favorite.itemClicked.connect(self.toolbox.favorite_item_clicked)
+        self.ui.toolBoxWhatToTest.currentChanged.connect(self.toolbox.move_toolbox_buttons)
+        self.ui.btn_tool_add_pkg.clicked.connect(self.toolbox.config_add_package)
+        self.ui.btn_tool_remove_pkg.clicked.connect(self.toolbox.config_remove_package)
 
         # Start Bodhi workers
         self.bodhi_workers = []
@@ -131,85 +134,8 @@ class MainWindow(QtGui.QMainWindow):
         self.pkg_worker.load_installed_packages_done.connect(self.__save_installed_pkg_list)
         self.pkg_worker.load_installed_packages_start.connect(self.__installed_pkg_list_loading_info)
 
-    def __toolbox_current_tab(self):
-        # What is the currently selected toolbox?
-        if self.ui.toolBoxWhatToTest.currentIndex() == self.ui.toolBoxWhatToTest.count() -1:
-            return 'ignored'
-        else:
-            return 'favorite'
-
-    def __config_remove_package(self):
-        # Removes selected package
-        if self.__toolbox_current_tab() == 'ignored':
-            try:
-                self.config.ignored_packages.remove_package(self.ui.tool_pkg_list_ignored.currentItem().text(0))
-            except:
-                pass
-        else:
-            try:
-                self.config.favorited_packages.remove_package(self.ui.tool_pkg_list_favorite.currentItem().text(0))
-            except:
-                pass
-        self.config.save_config()
-        self.__update_favorite_ignored_pkg_lists()
-
-    def __config_add_package(self):
-        # Add package from lineedit to config according to selected toolbox
-        if self.__toolbox_current_tab() == 'ignored':
-            self.config.ignored_packages.add_package(self.ui.tool_pkg_name.text())
-        else:
-            self.config.favorited_packages.add_package(self.ui.tool_pkg_name.text())
-        self.__update_favorite_ignored_pkg_lists()
-        self.ui.tool_pkg_name.clear()
-        self.config.save_config()
-
-    def __update_favorite_ignored_pkg_lists(self):
-        self.ui.tool_pkg_list_ignored.clear()
-        self.ui.tool_pkg_list_favorite.clear()
-
-        # Prepare list of package names
-        pkg_names = []
-        for key in self.__installed_updates.keys():
-            pkg_names.append(self.__installed_updates[key].parsed_nvr['name'])
-
-        # Top level items
-        def create_top_level_item(text, widget):
-            item = QtGui.QTreeWidgetItem()
-            item.setText(0, text)
-            widget.insertTopLevelItem(0, item)
-            item.setExpanded(True)
-            return item
-
-        # Top level items
-        ## Set names
-        fav_not_available = create_top_level_item('Bodhi update not available', self.ui.tool_pkg_list_favorite)
-        fav_available = create_top_level_item('Bodhi update available', self.ui.tool_pkg_list_favorite)
-
-        # Favorite packages
-        for pkg in self.config.favorited_packages:
-            item = QtGui.QTreeWidgetItem()
-            item.setText(0, pkg)
-            # If this package name is in available packages
-            if pkg in pkg_names:
-                fav_available.addChild(item)
-            else:
-                fav_not_available.addChild(item)
-
-        # Ignored packages
-        for pkg in self.config.ignored_packages:
-            item = QtGui.QTreeWidgetItem()
-            item.setText(0, pkg)
-            self.ui.tool_pkg_list_ignored.insertTopLevelItem(0, item)
-
-
-    def __move_toolbox_buttons(self, index):
-        ## Copy widget with pkg list tools to current index one
-        if self.__toolbox_current_tab() == 'ignored':
-            self.ui.toolBoxIgnoredLayout.addWidget(self.ui.tool_add_remove_pkg)
-        else:
-            self.ui.toolBoxFavoriteLayout.addWidget(self.ui.tool_add_remove_pkg)
-
     def __remove_package_tabs(self):
+        # This will backup tab from layout
         if self.__tabBar_info_backup is None:
             self.__tabBar_info_backup = self.ui.tabWidget.widget(1)
         self.ui.tabWidget.removeTab(1)
@@ -231,7 +157,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # We've got one bodhi update of installed package, add it to pkg list
         if variant == 'installed':
-            self.__installed_updates[data['itemlist_name']] = data
+            self.installed_updates[data['itemlist_name']] = data
             self.__add_status_item(data['itemlist_name'] + " is installed")
 
             if self.ui.installedBtn.isChecked():
@@ -250,7 +176,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # We've got available package update, save it
         elif variant == 'available':
-            self.__available_updates[data['itemlist_name']] = data
+            self.available_updates[data['itemlist_name']] = data
             self.__add_status_item(data['itemlist_name'] + " can be updated")
 
             if self.ui.availableBtn.isChecked():
@@ -288,7 +214,7 @@ class MainWindow(QtGui.QMainWindow):
 
             # If it is in favorited packages, update list
             if data['parsed_nvr']['name'] in self.config.favorited_packages:
-                self.__update_favorite_ignored_pkg_lists()
+                self.toolbox.update_favorite_ignored_pkg_lists()
 
     def __set_installed_packages(self, packages):
         self.__add_status_item(str(len(packages)) + " installed packages on system")
@@ -370,20 +296,6 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.statusBar.showMessage(message)
         self.ui.loadPackagesBtn.setText('Reload packages')
 
-    def __favorite_item_clicked(self, item, column):
-        # Get package name
-        # Do this only when package is selected (not the header text)
-        if item.parent() is not None:
-            self.ui.searchEdit.setText(str(item.text(0)))
-
-    def __negative_karma_clicked(self, item, column):
-        # Get package name even if comment selected
-        if item.parent() is not None:
-            item = item.parent()
-
-        # Set package name as search text
-        self.ui.searchEdit.setText(str(item.text(0)))
-
     def __set_search_text(self, text):
         self.ui.searchEdit.setText(str(text))
 
@@ -449,10 +361,10 @@ class MainWindow(QtGui.QMainWindow):
 
         ## Is this pkg list for him?
         if self.ui.installedBtn.isChecked():
-            if update['itemlist_name'] not in self.__installed_updates:
+            if update['itemlist_name'] not in self.installed_updates:
                 return False
         elif self.ui.availableBtn.isChecked():
-            if update['itemlist_name'] not in self.__available_updates:
+            if update['itemlist_name'] not in self.available_updates:
                 return False
 
         ## Does this update match search text?
@@ -474,9 +386,9 @@ class MainWindow(QtGui.QMainWindow):
 
         # Prepare data which we want to show
         if self.ui.installedBtn.isChecked():
-            pkgList = self.__installed_updates
+            pkgList = self.installed_updates
         elif self.ui.availableBtn.isChecked():
-            pkgList = self.__available_updates
+            pkgList = self.available_updates
 
         # Loop packages
         for key in pkgList.keys():
@@ -503,9 +415,9 @@ class MainWindow(QtGui.QMainWindow):
     def __get_bodhi_update(self, pkg=None):
         # Get bodhi update according to selected package in pkg list
         if self.ui.installedBtn.isChecked():
-            pkgList = self.__installed_updates
+            pkgList = self.installed_updates
         elif self.ui.availableBtn.isChecked():
-            pkgList = self.__available_updates
+            pkgList = self.available_updates
         else:
             return
 
