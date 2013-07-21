@@ -443,6 +443,10 @@ class MainWindow(QtGui.QMainWindow):
 
     def __update_can_be_shown(self, update):
         # Update need to pass several criteria to appear in current pkg list
+        ## Is this package name in ignore list?
+        if update['parsed_nvr']['name'] in self.config.ignored_packages:
+            return False
+
         ## Is this pkg list for him?
         if self.ui.installedBtn.isChecked():
             if update['itemlist_name'] not in self.__installed_updates:
