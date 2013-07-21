@@ -244,8 +244,9 @@ class MainWindow(QtGui.QMainWindow):
                         self.ui.pkgList.removeItemWidget(item)
                         break
 
-                # Add update to list
-                self.ui.pkgList.addItem(data['itemlist_name'])
+                # Add update to list if it match filters
+                if self.__update_can_be_shown(data):
+                    self.ui.pkgList.addItem(data['itemlist_name'])
 
         # We've got available package update, save it
         elif variant == 'available':
@@ -262,8 +263,9 @@ class MainWindow(QtGui.QMainWindow):
                         self.ui.pkgList.removeItemWidget(item)
                         break
 
-                # Add update to list
-                self.ui.pkgList.addItem(data['itemlist_name'])
+                # Add update to list if it match filters
+                if self.__update_can_be_shown(data):
+                    self.ui.pkgList.addItem(data['itemlist_name'])
 
         # Prepare What to test section
         if variant in ['installed', 'available']:
@@ -439,9 +441,31 @@ class MainWindow(QtGui.QMainWindow):
                 message = "Server error %s" % str(e)
                 self.__add_status_item(message)
 
+    def __update_can_be_shown(self, update):
+        # Update need to pass several criteria to appear in current pkg list
+        ## Is this pkg list for him?
+        if self.ui.installedBtn.isChecked():
+            if update['itemlist_name'] not in self.__installed_updates:
+                return False
+        elif self.ui.availableBtn.isChecked():
+            if update['itemlist_name'] not in self.__available_updates:
+                return False
+
+        ## Does this update match search text?
+        if len(self.ui.searchEdit.text()) > 0:
+            if self.ui.searchEdit.text() not in update['itemlist_name']:
+                return False
+
+        ## Karma submitted filter
+        karma_username = self.ui.karmaUsernameEdit.text()
+        if self.ui.karmaCheckBox.isChecked():
+            for comment in update['formatted_comments']:
+                if comment['author'] == karma_username:
+                    return False
+
+        return True
+
     def __populate_pkgList(self):
-        username = self.ui.karmaUsernameEdit.text()
-        not_submitted_karma = self.ui.karmaCheckBox.isChecked()
         self.ui.pkgList.clear()
 
         # Prepare data which we want to show
@@ -454,21 +478,11 @@ class MainWindow(QtGui.QMainWindow):
         for key in pkgList.keys():
             update = pkgList[key]
 
-            # Filter package list by search text
-            if len(self.ui.searchEdit.text()) > 0:
-                if self.ui.searchEdit.text() not in update['itemlist_name']:
-                    continue
+            # Can this be shown? Send it to filters!
+            if not self.__update_can_be_shown(update):
+                continue
 
-            add_it = True
-            # If we want to filter out updates which has karma from user
-            if not_submitted_karma:
-                for comment in update['formatted_comments']:
-                    if comment['author'] == username:
-                        add_it = False
-
-            # Add to list
-            if add_it:
-                self.ui.pkgList.addItem(update['itemlist_name'])
+            self.ui.pkgList.addItem(update['itemlist_name'])
 
     def __show_installed(self):
         # Show installed packages which are from testing repo
