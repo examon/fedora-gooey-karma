@@ -57,6 +57,7 @@ class BodhiWorker(QtCore.QThread):
                     bodhi_update['test_cases'] = self.__get_testcases(bodhi_update)
                     bodhi_update['formatted_comments'] = self.__get_comments(bodhi_update)
                     bodhi_update['relevant_packages'] = self.__get_relevant_packages(package.name)
+                    bodhi_update['parsed_nvr'] = self.__parse_nvr(bodhi_update['itemlist_name'])
                     self.bodhi_query_done.emit([variant, bodhi_update])
 
             elif action == 'set_installed_packages':
@@ -70,6 +71,20 @@ class BodhiWorker(QtCore.QThread):
                 print "Bodhi worker: Unknown action"
 
             self.queue.task_done()
+
+    def __parse_nvr(self, nvr):
+        splitted = nvr.split('-')
+
+        # We need at least 3 items
+        if len(splitted) < 3:
+            return
+
+        # Get items from array
+        name = '-'.join(splitted[0:(len(splitted)-2)])
+        version = splitted[-2]
+        release = splitted[-1]
+
+        return {'name':name, 'version':version, 'release':release}
 
     def __get_relevant_packages(self, package):
         pkgs = {}
@@ -148,18 +163,7 @@ class BodhiWorker(QtCore.QThread):
         return []
 
     def __get_comments(self, data):
-        """Fetches user comments from the data.
-
-        Loads all user freedback info, e.g. comments, karma, username.
-
-        Args:
-            data: A dictionary containing Bodhi client query output for each package (see: testing_builds).
-
-        Returns:
-            comments: A list of lists where earch sublist represents feedback for one package.
-
-                      comments = [ ["Feedback string", "author nickname", int(karma)], ... ]
-        """
+        # Get comments and rewrite it to better formatted dict
         comments = []
         i = 1
         if len(data['comments']):

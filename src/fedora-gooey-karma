@@ -28,13 +28,11 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '../share/fedora-gooey-karma'))
 
 import webbrowser
-import yum
 import Queue
 import rpm
 from fedora.client import AuthError
 from fedora.client import ServerError
 from fedora.client.bodhi import BodhiClient
-from yum.misc import getCacheDir
 from PySide import QtCore
 from PySide import QtGui
 
@@ -42,6 +40,7 @@ from customgui import CustomTreeWidgetItem
 from mainwindow_gui import Ui_MainWindow
 from packagesworker import PackagesWorker
 from bodhiworker import BodhiWorker
+from config import Config
 
 
 class MainWindow(QtGui.QMainWindow):
@@ -49,6 +48,7 @@ class MainWindow(QtGui.QMainWindow):
     __BUGZILLA_REDHAT_URL = "http://bugzilla.redhat.com/show_bug.cgi?id="
     __PACKAGE_INFO_URL = "https://apps.fedoraproject.org/packages/"
     __FEDORAPEOPLE_TESTCASE_URL = "https://fedoraproject.org/wiki/QA:Testcase_"
+    __KOJI_PACKAGES_URL = "http://kojipkgs.fedoraproject.org//packages/"
     __FEDORA_RELEASES = [ 'Fedora 19', 'Fedora 18', 'Fedora 17' ]
     __BODHI_WORKERS_COUNT = 15
 
@@ -62,6 +62,15 @@ class MainWindow(QtGui.QMainWindow):
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
+        # Holders of data
+        self.__installed_packages = {}
+        self.__installed_updates = {}
+        self.__available_updates = {}
+
+        # Config
+        self.config = Config()
+        self.config.load_config()
+
         # Prepare Queues
         self.bodhi_workers_queue = Queue.Queue()
         self.pkg_worker_queue = Queue.Queue()
@@ -70,26 +79,20 @@ class MainWindow(QtGui.QMainWindow):
         self.rpmTS = rpm.TransactionSet()
         self.__load_and_set_fedora_releases()
         self.ui.tabWidget.setCurrentIndex(0)
+        self.ui.tabWidget_side.setCurrentIndex(0)
+        self.ui.toolBoxWhatToTest.setCurrentIndex(0)
         self.ui.karmaUsernameEdit.setVisible(False)
+        self.__update_favorite_ignored_pkg_lists()
 
         # TabBar - remove package's tabs and save it for later use
         self.__tabBar_info_backup = None
         self.__remove_package_tabs()
 
-        # YumBase and cache
-        self.yb = yum.YumBase()
-        cachedir = getCacheDir()
-        self.yb.repos.setCacheDir(cachedir)
-
-        # Holders of data
-        self.__installed_packages = {}
-        self.__installed_updates = {}
-        self.__available_updates = {}
-
         # Connects
+        ## Top main menu
         self.ui.actionQuit.triggered.connect(QtCore.QCoreApplication.instance().quit)
         self.ui.actionAbout.triggered.connect(self.__show_message_box_about)
-
+        ## Misc connects
         self.ui.pkgList.currentItemChanged.connect(self.__show_package_detail)
         self.ui.searchEdit.textChanged.connect(self.__populate_pkgList)
         self.ui.installedBtn.clicked.connect(self.__show_installed)
@@ -101,10 +104,17 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.karmaCheckBox.stateChanged.connect(self.__populate_pkgList)
         self.ui.karmaUsernameEdit.textChanged.connect(self.__populate_pkgList)
         self.ui.sendBtn.clicked.connect(self.__send_comment)
-        self.ui.treeWidget_negative_karma.itemClicked.connect(self.__negative_karma_clicked)
+        ## Package settings
         self.ui.pkg_settings_open_bodhi_update.clicked.connect(self.__show_bodhi_update_in_browser)
+        self.ui.pkg_settings_download_source_rpm.clicked.connect(self.__download_source_rpm)
+        ## What to test toolbox
+        self.ui.tool_pkg_list_negative.itemClicked.connect(self.__negative_karma_clicked)
+        self.ui.tool_pkg_list_favorite.itemClicked.connect(self.__favorite_item_clicked)
+        self.ui.toolBoxWhatToTest.currentChanged.connect(self.__move_toolbox_buttons)
+        self.ui.btn_tool_add_pkg.clicked.connect(self.__config_add_package)
+        self.ui.btn_tool_remove_pkg.clicked.connect(self.__config_remove_package)
 
-        # Prepare threads
+        # Start Bodhi workers
         self.bodhi_workers = []
         for i in range(self.__BODHI_WORKERS_COUNT):
             b = BodhiWorker("bodhi_worker" + str(i), self.bodhi_workers_queue)
@@ -112,6 +122,7 @@ class MainWindow(QtGui.QMainWindow):
             b.start()
             self.bodhi_workers.append(b)
 
+        # Start package worker
         self.pkg_worker = PackagesWorker(self.pkg_worker_queue, self.bodhi_workers_queue, self.__BODHI_WORKERS_COUNT)
         self.pkg_worker.set_installed_packages.connect(self.__set_installed_packages)
         self.pkg_worker.start()
@@ -119,6 +130,84 @@ class MainWindow(QtGui.QMainWindow):
         # Pkg worker threads
         self.pkg_worker.load_installed_packages_done.connect(self.__save_installed_pkg_list)
         self.pkg_worker.load_installed_packages_start.connect(self.__installed_pkg_list_loading_info)
+
+    def __toolbox_current_tab(self):
+        # What is the currently selected toolbox?
+        if self.ui.toolBoxWhatToTest.currentIndex() == self.ui.toolBoxWhatToTest.count() -1:
+            return 'ignored'
+        else:
+            return 'favorite'
+
+    def __config_remove_package(self):
+        # Removes selected package
+        if self.__toolbox_current_tab() == 'ignored':
+            try:
+                self.config.ignored_packages.remove_package(self.ui.tool_pkg_list_ignored.currentItem().text(0))
+            except:
+                pass
+        else:
+            try:
+                self.config.favorited_packages.remove_package(self.ui.tool_pkg_list_favorite.currentItem().text(0))
+            except:
+                pass
+        self.config.save_config()
+        self.__update_favorite_ignored_pkg_lists()
+
+    def __config_add_package(self):
+        # Add package from lineedit to config according to selected toolbox
+        if self.__toolbox_current_tab() == 'ignored':
+            self.config.ignored_packages.add_package(self.ui.tool_pkg_name.text())
+        else:
+            self.config.favorited_packages.add_package(self.ui.tool_pkg_name.text())
+        self.__update_favorite_ignored_pkg_lists()
+        self.ui.tool_pkg_name.clear()
+        self.config.save_config()
+
+    def __update_favorite_ignored_pkg_lists(self):
+        self.ui.tool_pkg_list_ignored.clear()
+        self.ui.tool_pkg_list_favorite.clear()
+
+        # Prepare list of package names
+        pkg_names = []
+        for key in self.__installed_updates.keys():
+            pkg_names.append(self.__installed_updates[key].parsed_nvr['name'])
+
+        # Top level items
+        def create_top_level_item(text, widget):
+            item = QtGui.QTreeWidgetItem()
+            item.setText(0, text)
+            widget.insertTopLevelItem(0, item)
+            item.setExpanded(True)
+            return item
+
+        # Top level items
+        ## Set names
+        fav_not_available = create_top_level_item('Bodhi update not available', self.ui.tool_pkg_list_favorite)
+        fav_available = create_top_level_item('Bodhi update available', self.ui.tool_pkg_list_favorite)
+
+        # Favorite packages
+        for pkg in self.config.favorited_packages:
+            item = QtGui.QTreeWidgetItem()
+            item.setText(0, pkg)
+            # If this package name is in available packages
+            if pkg in pkg_names:
+                fav_available.addChild(item)
+            else:
+                fav_not_available.addChild(item)
+
+        # Ignored packages
+        for pkg in self.config.ignored_packages:
+            item = QtGui.QTreeWidgetItem()
+            item.setText(0, pkg)
+            self.ui.tool_pkg_list_ignored.insertTopLevelItem(0, item)
+
+
+    def __move_toolbox_buttons(self, index):
+        ## Copy widget with pkg list tools to current index one
+        if self.__toolbox_current_tab() == 'ignored':
+            self.ui.toolBoxIgnoredLayout.addWidget(self.ui.tool_add_remove_pkg)
+        else:
+            self.ui.toolBoxFavoriteLayout.addWidget(self.ui.tool_add_remove_pkg)
 
     def __remove_package_tabs(self):
         if self.__tabBar_info_backup is None:
@@ -155,8 +244,9 @@ class MainWindow(QtGui.QMainWindow):
                         self.ui.pkgList.removeItemWidget(item)
                         break
 
-                # Add update to list
-                self.ui.pkgList.addItem(data['itemlist_name'])
+                # Add update to list if it match filters
+                if self.__update_can_be_shown(data):
+                    self.ui.pkgList.addItem(data['itemlist_name'])
 
         # We've got available package update, save it
         elif variant == 'available':
@@ -173,8 +263,32 @@ class MainWindow(QtGui.QMainWindow):
                         self.ui.pkgList.removeItemWidget(item)
                         break
 
-                # Add update to list
-                self.ui.pkgList.addItem(data['itemlist_name'])
+                # Add update to list if it match filters
+                if self.__update_can_be_shown(data):
+                    self.ui.pkgList.addItem(data['itemlist_name'])
+
+        # Prepare What to test section
+        if variant in ['installed', 'available']:
+            # Negative karma
+            update_item = None
+            for comment in data['formatted_comments']:
+                #  If we've got negative karma, show this update in list
+                if comment['karma'] == -1:
+                    # Prepare line with update itself
+                    if  update_item is None:
+                        update_item = QtGui.QTreeWidgetItem()
+                        update_item.setText(0, str(data['itemlist_name']))
+                        self.ui.tool_pkg_list_negative.insertTopLevelItem(0, update_item)
+                        update_item.setExpanded(True)
+
+                    # Add comment as child to update
+                    line = QtGui.QTreeWidgetItem()
+                    line.setText(0, str(comment['text']))
+                    update_item.insertChild(0, line)
+
+            # If it is in favorited packages, update list
+            if data['parsed_nvr']['name'] in self.config.favorited_packages:
+                self.__update_favorite_ignored_pkg_lists()
 
     def __set_installed_packages(self, packages):
         self.__add_status_item(str(len(packages)) + " installed packages on system")
@@ -202,6 +316,7 @@ class MainWindow(QtGui.QMainWindow):
     def __start_pkg_worker(self):
         # Get release and put it to queue
         # Package worker will get info about it
+        self.ui.loadPackagesBtn.setText('Loading packages')
         releasever = self.ui.releaseComboBox.currentText().split()[-1]
         self.pkg_worker_queue.put([releasever, self.ui.maxDays.value()])
 
@@ -220,17 +335,31 @@ class MainWindow(QtGui.QMainWindow):
         webbrowser.open_new_tab("%s%s" % (self.__BUGZILLA_REDHAT_URL, bug_id))
 
     def __show_relevant_pkg_in_browser(self):
-        pkg_name = self.ui.treeWidget_related_packages.currentItem().text(0).lstrip().rstrip()
-        if not pkg_name == "Desktop packages" and not pkg_name == "Other packages":
+        widget = self.ui.treeWidget_related_packages.currentItem()
+        if widget.parent() is not None:
             # Do not need to open new tab when double clicked at "Desktop packages"
-            # or "Other packages"
-            webbrowser.open_new_tab("%s%s" % (self.__PACKAGE_INFO_URL, pkg_name))
+            # or "Other packages", so affect childs only
+            webbrowser.open_new_tab("%s%s" % (self.__PACKAGE_INFO_URL, widget.text(0).strip()))
 
     def __show_bodhi_update_in_browser(self):
         update = self.__get_bodhi_update()
         if not update:
             return
         webbrowser.open_new_tab(update['bodhi_url'])
+
+    def __download_source_rpm(self):
+        update = self.__get_bodhi_update()
+        if not update:
+            return
+
+        name = update['parsed_nvr']['name']
+        version = update['parsed_nvr']['version']
+        release = update['parsed_nvr']['release']
+
+        # Set-up url
+        url = self.__KOJI_PACKAGES_URL + "%s/%s/%s/src/%s.src.rpm" % (name, version, release, update['itemlist_name'])
+        # Maybe it would be nice to show Save dialog and save directly to hdd
+        webbrowser.open_new_tab(url)
 
     def __show_testcase_in_browser(self):
         testcase_name = self.ui.treeWidget_test_cases.currentItem().text(0).replace(' ', '_')
@@ -239,25 +368,13 @@ class MainWindow(QtGui.QMainWindow):
     def __save_installed_pkg_list(self, pkg_object):
         message = "All installed packages has been loaded. [Fedora %s]" % pkg_object
         self.ui.statusBar.showMessage(message)
-        # Prepare What to test section
-        ## Negative karma
-        for key in self.__installed_updates:
-            update = self.__installed_updates[key]
-            update_item = None
-            for comment in update['formatted_comments']:
-                #  If we've got negative karma, show this update in list
-                if comment['karma'] == -1:
-                    # Prepare line with update itself
-                    if  update_item is None:
-                        update_item = QtGui.QTreeWidgetItem()
-                        update_item.setText(0, str(update['itemlist_name']))
-                        self.ui.treeWidget_negative_karma.insertTopLevelItem(0, update_item)
-                        update_item.setExpanded(True)
+        self.ui.loadPackagesBtn.setText('Reload packages')
 
-                    # Add comment as child to update
-                    line = QtGui.QTreeWidgetItem()
-                    line.setText(0, str(comment['text']))
-                    update_item.insertChild(0, line)
+    def __favorite_item_clicked(self, item, column):
+        # Get package name
+        # Do this only when package is selected (not the header text)
+        if item.parent() is not None:
+            self.ui.searchEdit.setText(str(item.text(0)))
 
     def __negative_karma_clicked(self, item, column):
         # Get package name even if comment selected
@@ -279,6 +396,7 @@ class MainWindow(QtGui.QMainWindow):
         comment = self.ui.commentEdit.toPlainText()
         karma = self.ui.karmaBox.currentText()
 
+        # Catch all problems
         if self.__selected_pkglist_item is None:
             message = "Comment not submitted: Could not get update from testing builds"
             self.__add_status_item(message)
@@ -292,6 +410,7 @@ class MainWindow(QtGui.QMainWindow):
             self.__add_status_item(message)
             return
 
+        # Prepare message for Bodhi system
         bc = BodhiClient()
         bc.username = self.ui.usernameEdit.text()
         bc.password = self.ui.passwordEdit.text()
@@ -299,6 +418,7 @@ class MainWindow(QtGui.QMainWindow):
         message = "Processing... Wait please..."
         self.__add_status_item(message)
 
+        # Try send it 3 times if ServerError occours
         for retry in range(3):
             try:
                 # Send comment to bodhi
@@ -321,9 +441,31 @@ class MainWindow(QtGui.QMainWindow):
                 message = "Server error %s" % str(e)
                 self.__add_status_item(message)
 
+    def __update_can_be_shown(self, update):
+        # Update need to pass several criteria to appear in current pkg list
+        ## Is this pkg list for him?
+        if self.ui.installedBtn.isChecked():
+            if update['itemlist_name'] not in self.__installed_updates:
+                return False
+        elif self.ui.availableBtn.isChecked():
+            if update['itemlist_name'] not in self.__available_updates:
+                return False
+
+        ## Does this update match search text?
+        if len(self.ui.searchEdit.text()) > 0:
+            if self.ui.searchEdit.text() not in update['itemlist_name']:
+                return False
+
+        ## Karma submitted filter
+        karma_username = self.ui.karmaUsernameEdit.text()
+        if self.ui.karmaCheckBox.isChecked():
+            for comment in update['formatted_comments']:
+                if comment['author'] == karma_username:
+                    return False
+
+        return True
+
     def __populate_pkgList(self):
-        username = self.ui.karmaUsernameEdit.text()
-        not_submitted_karma = self.ui.karmaCheckBox.isChecked()
         self.ui.pkgList.clear()
 
         # Prepare data which we want to show
@@ -332,38 +474,30 @@ class MainWindow(QtGui.QMainWindow):
         elif self.ui.availableBtn.isChecked():
             pkgList = self.__available_updates
 
-
         # Loop packages
         for key in pkgList.keys():
             update = pkgList[key]
 
-            # Filter package list by search text
-            if len(self.ui.searchEdit.text()) > 0:
-                if self.ui.searchEdit.text() not in update['itemlist_name']:
-                    continue
+            # Can this be shown? Send it to filters!
+            if not self.__update_can_be_shown(update):
+                continue
 
-            add_it = True
-            # If we want to filter out updates which has karma from user
-            if not_submitted_karma:
-                for comment in update['formatted_comments']:
-                    if comment['author'] == username:
-                        add_it = False
-
-            # Add to list
-            if add_it:
-                self.ui.pkgList.addItem(update['itemlist_name'])
+            self.ui.pkgList.addItem(update['itemlist_name'])
 
     def __show_installed(self):
+        # Show installed packages which are from testing repo
         self.ui.availableBtn.setChecked(False)
         self.ui.installedBtn.setChecked(True)
         self.__populate_pkgList()
 
     def __show_available(self):
+        # Show packages available to update
         self.ui.installedBtn.setChecked(False)
         self.ui.availableBtn.setChecked(True)
         self.__populate_pkgList()
 
     def __get_bodhi_update(self, pkg=None):
+        # Get bodhi update according to selected package in pkg list
         if self.ui.installedBtn.isChecked():
             pkgList = self.__installed_updates
         elif self.ui.availableBtn.isChecked():
@@ -378,16 +512,6 @@ class MainWindow(QtGui.QMainWindow):
 
 
     def __show_package_detail(self, pkg_item):
-        """Shows package detail in the MainWindow.
-
-        Updates all info in every widget when user click on the item in the pkgList.
-
-        Args:
-            pkg_item: A currently selected pkgList item widget.
-
-        Returns:
-            Returns when pkg_item is None.
-        """
         if pkg_item is None:
             return
 
@@ -406,9 +530,11 @@ class MainWindow(QtGui.QMainWindow):
         # Switch tabs to info tab
         self.ui.tabWidget.setCurrentIndex(1)
 
-
         ## title
         self.ui.pkgNameLabel.setText(bodhi_update['itemlist_name'])
+
+        # Fill in toolbox Add package line edit
+        self.ui.tool_pkg_name.setText(bodhi_update['parsed_nvr']['name'])
 
         ## yum info
         yum_values = {}
@@ -440,7 +566,7 @@ class MainWindow(QtGui.QMainWindow):
             yum_pkg = None
 
         if yum_pkg is not None:
-            # if we got yum package
+            # If we got yum package
             # fetch info from yum_pkg
             yum_values['name'] = yum_pkg.name
             yum_values['arch'] = yum_pkg.arch
@@ -461,19 +587,20 @@ class MainWindow(QtGui.QMainWindow):
             yum_values['installed_version'] = ''
             if bodhi_update.variant == 'available':
                 yum_values['installed_version'] = '(installed version)'
-            # decode all strings found in yum_values to utf-8
+            # Decode all strings found in yum_values to utf-8
             self.__decode_dict(yum_values)
-            # map fetched yum info on the yum_format_string
-            # add to the final browser string
+            # Map fetched yum info on the yum_format_string
+            # Add to the final browser string
             text_browser_string += yum_format_string % yum_values
 
-            ## related packages
+            ## Related packages
             self.ui.treeWidget_related_packages.clear()
 
             ### Others pkgs category
             item_others = QtGui.QTreeWidgetItem()
             item_others.setText(0, "Other packages")
             self.ui.treeWidget_related_packages.insertTopLevelItem(0, item_others)
+            item_others.setExpanded(True)
 
             for key in bodhi_update['relevant_packages']['others'].keys():
                 rel_pkg = bodhi_update['relevant_packages']['others'][key]
@@ -486,6 +613,7 @@ class MainWindow(QtGui.QMainWindow):
             item_desktop = QtGui.QTreeWidgetItem()
             item_desktop.setText(0, "Desktop packages")
             self.ui.treeWidget_related_packages.insertTopLevelItem(0, item_desktop)
+            item_desktop.setExpanded(True)
 
             for key in bodhi_update['relevant_packages']['desktop'].keys():
                 rel_pkg = bodhi_update['relevant_packages']['desktop'][key]
@@ -494,11 +622,10 @@ class MainWindow(QtGui.QMainWindow):
                 pkg.setToolTip(0, rel_pkg.description)
                 item_desktop.insertChild(0, pkg)
 
-
         else:
             print "Not in installed packages"
 
-        ## bodhi info
+        ## Bodhi info
         bodhi_values = {}
         bodhi_format_string = (
             "<b>Bodhi Info</b>\n"
@@ -525,10 +652,10 @@ class MainWindow(QtGui.QMainWindow):
             builds_string = ""
             for build_item in builds_list:
                 if not build_num:
-                    # first build name
+                    # First build name
                     builds_string += "%s\n" % build_item['nvr']
                 else:
-                    # second and next builds
+                    # Second and next builds
                     builds_string += "%s%s\n" % (17 * " ", build_item['nvr'])
                 build_num += 1
             bodhi_values['builds'] = builds_string
@@ -544,13 +671,13 @@ class MainWindow(QtGui.QMainWindow):
         bodhi_values['unstable_karma'] = bodhi_update['unstable_karma']
         bodhi_values['notes'] = bodhi_update['notes']
         bodhi_values['bodhi_url'] = bodhi_update['bodhi_url']
-        # decode all strings found in bodhi_values to utf-8
+        # Decode all strings found in bodhi_values to utf-8
         self.__decode_dict(bodhi_values)
-        # map fetched bodhi info on the bodhi_format_string
-        # add to the final browser string
+        # Map fetched bodhi info on the bodhi_format_string
+        # Add to the final browser string
         text_browser_string += bodhi_format_string % bodhi_values
 
-        # first descriptions
+        # First descriptions
         descriptions_values = {}
         descriptions_values['yum_description'] = yum_values['description']
         descriptions_values['bodhi_notes'] = bodhi_values['notes']
@@ -562,10 +689,10 @@ class MainWindow(QtGui.QMainWindow):
         )
         text_browser_desc_string = text_browser_descriptions % descriptions_values
 
-        # set final browser string text
+        # Set final browser string text
         self.ui.textBrowser.setHtml('<pre>' + text_browser_desc_string + text_browser_string + '</pre>')
 
-        ## bugs
+        ## Bugs
         self.ui.treeWidget_bugs.clear()
         if bodhi_update['bugs_by_id']:
             for key in bodhi_update['bugs_by_id']:
@@ -574,7 +701,7 @@ class MainWindow(QtGui.QMainWindow):
                 bug.setText(1, str(bodhi_update['bugs_by_id'][key].encode('utf-8')))
                 self.ui.treeWidget_bugs.insertTopLevelItem(0, bug)
 
-        ## test cases
+        ## Test cases
         self.ui.treeWidget_test_cases.clear()
         test_cases_list = bodhi_update['test_cases']
         if len(test_cases_list):
@@ -583,14 +710,15 @@ class MainWindow(QtGui.QMainWindow):
                 tc.setText(0, str(test_case_item))
                 self.ui.treeWidget_test_cases.insertTopLevelItem(0, tc)
 
-        ## feedback
+        ## Feedback
         self.ui.treeWidget_feedback.clear()
         comments = bodhi_update['formatted_comments']
 
-        ## prepare brushes
+        ## Prepare brushes
         green_brush = QtGui.QBrush(QtCore.Qt.darkGreen)
         red_brush = QtGui.QBrush(QtCore.Qt.red)
 
+        ## Load comments
         if comments:
             for i in comments:
                 comment = CustomTreeWidgetItem()
@@ -620,6 +748,8 @@ class MainWindow(QtGui.QMainWindow):
                 self.ui.treeWidget_feedback.insertTopLevelItem(0, comment)
 
     def exit_threads(self):
+        # Try to properly exit threads
+        # This still need work
         if not self.pkg_worker.isRunning():
             self.pkg_worker.exit()
 

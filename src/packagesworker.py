@@ -29,21 +29,11 @@ from PySide import QtCore
 from yum.misc import getCacheDir
 
 class PackagesWorker(QtCore.QThread):
-    """Worker class used for new thread.
-
-    Attributes:
-        releasever: A string storing Fedora release version number.
-        load_available_packages_start: A signal, emitted when load_available is called.
-        load_available_packages_done: A signal, emitted when load_available returns.
-        load_installed_packages_start: A signal, emitted when load_installed is called.
-        load_installed_packages_done: A signal, emitted when load_installed returns.
-    """
 
     load_available_packages_start = QtCore.Signal(object)
     load_installed_packages_start = QtCore.Signal(object)
     load_available_packages_done = QtCore.Signal(object)
     load_installed_packages_done = QtCore.Signal(object)
-
     set_installed_packages = QtCore.Signal(object)
 
     def __init__(self, queue, bodhi_workers_queue, bodhi_workers_count, parent=None):
@@ -61,13 +51,6 @@ class PackagesWorker(QtCore.QThread):
         self.rpmTS = rpm.TransactionSet()
 
     def set_release(self, release):
-        """Sets given argument as a releasever.
-
-        Method stores given Fedora release number to the public class attribute releasever.
-
-        Args:
-            release: A string containing Fedora release version number.
-        """
         self.releasever = release
 
     def run(self):
@@ -84,17 +67,6 @@ class PackagesWorker(QtCore.QThread):
             self.queue.task_done()
 
     def load_installed(self, releasever, max_days):
-        """Loads installed packages related to the releasever.
-
-        Loads all locally installed packages related to the Fedora release version.
-        Processes only those installed packages which are from @updates-testing repo.
-
-        Stores all loaded data in the testing_builds & builds.
-
-        Args:
-            releasever: Fedora release version number (e.g. 18).
-        """
-
         # Load from yum rpmdb all installed packages
         self.installed_packages = self.yb.rpmdb.returnPackages()
         # Send it to all bodhi_workers
