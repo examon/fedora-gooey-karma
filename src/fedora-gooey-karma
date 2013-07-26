@@ -84,6 +84,12 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.karmaUsernameEdit.setVisible(False)
         self.toolbox.update_favorite_ignored_pkg_lists()
 
+        # Progress bar
+        self.progressBar = QtGui.QProgressBar()
+        self.progressBar.setMinimum(0)
+        self.ui.centralWidgetSplitter.addWidget(self.progressBar)
+        self.progressBar.hide()
+
         # TabBar - remove package's tabs and save it for later use
         self.__tabBar_info_backup = None
         self.__remove_package_tabs()
@@ -125,11 +131,17 @@ class MainWindow(QtGui.QMainWindow):
         # Start package worker
         self.pkg_worker = PackagesWorker(self.pkg_worker_queue, self.bodhi_workers_queue, self.__BODHI_WORKERS_COUNT)
         self.pkg_worker.set_installed_packages.connect(self.__set_installed_packages)
+        self.pkg_worker.num_of_pkgs_to_process.connect(self.__set_num_of_pkgs_to_process)
         self.pkg_worker.start()
 
         # Pkg worker threads
         self.pkg_worker.load_installed_packages_done.connect(self.__save_installed_pkg_list)
         self.pkg_worker.load_installed_packages_start.connect(self.__installed_pkg_list_loading_info)
+
+    def __set_num_of_pkgs_to_process(self, num):
+        # Set maximum size of progressbar according to num of packages to process in Bodhi
+        self.progressBar.setMaximum(int(num))
+        self.progressBar.show()
 
     def __remove_package_tabs(self):
         # This will backup tab from layout
@@ -192,6 +204,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # Prepare What to test section
         if variant in ['installed', 'available']:
+            self.progressBar.setValue(self.progressBar.value() + 1)
             # Negative karma
             update_item = None
             for comment in data['formatted_comments']:
@@ -212,6 +225,10 @@ class MainWindow(QtGui.QMainWindow):
             # If it is in favorited packages, update list
             if data['parsed_nvr']['name'] in self.config.favorited_packages:
                 self.toolbox.update_favorite_ignored_pkg_lists()
+        
+        # Catch progress only items
+        if variant == 'progress_only':
+            self.progressBar.setValue(self.progressBar.value() + 1)
 
     def __set_installed_packages(self, packages):
         self.__add_status_item(str(len(packages)) + " installed packages on system")
@@ -257,6 +274,7 @@ class MainWindow(QtGui.QMainWindow):
         message = "All installed packages has been loaded. [Fedora %s]" % pkg_object
         self.ui.statusBar.showMessage(message)
         self.ui.loadPackagesBtn.setText('Reload packages')
+        self.progressBar.hide()
 
     def __set_search_text(self, text):
         self.ui.searchEdit.setText(str(text))
@@ -387,7 +405,6 @@ class MainWindow(QtGui.QMainWindow):
             return pkgList[self.ui.pkgList.currentItem().text()]
         else:
             return pkgList[pkg]
-
 
     def __show_package_detail(self, pkg_item):
         if pkg_item is None:

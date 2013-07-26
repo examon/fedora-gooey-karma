@@ -59,6 +59,10 @@ class BodhiWorker(QtCore.QThread):
                     bodhi_update['relevant_packages'] = self.__get_relevant_packages(package.name)
                     bodhi_update['parsed_nvr'] = self.__parse_nvr(bodhi_update['itemlist_name'])
                     self.bodhi_query_done.emit([variant, bodhi_update])
+                else:
+                    # If there is no info from Bodhi, send info to main thread to adjust progress bar
+                    self.bodhi_query_done.emit(['progress_only', None])
+
 
             elif action == 'set_installed_packages':
                 # Is this item for this worker?

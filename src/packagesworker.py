@@ -35,6 +35,7 @@ class PackagesWorker(QtCore.QThread):
     load_available_packages_done = QtCore.Signal(object)
     load_installed_packages_done = QtCore.Signal(object)
     set_installed_packages = QtCore.Signal(object)
+    num_of_pkgs_to_process = QtCore.Signal(object)
 
     def __init__(self, queue, bodhi_workers_queue, bodhi_workers_count, parent=None):
         super(PackagesWorker, self).__init__(parent)
@@ -84,6 +85,7 @@ class PackagesWorker(QtCore.QThread):
         installed_max_days = datetime.timedelta(max_days)
 
         # See packages for choosen release
+        pkgsForBodhi = []
         for pkg in self.installed_packages:
             # Get Fedora release shortcut (e.g. fc18)
             rel = pkg.release.split('.')[-1]
@@ -93,6 +95,12 @@ class PackagesWorker(QtCore.QThread):
             if installed_timedelta < installed_max_days:
                 if rel.startswith('fc') and releasever in rel:
                     if True or pkg.ui_from_repo == '@updates-testing':
-                        self.bodhi_workers_queue.put(['package_update', pkg])
+                        pkgsForBodhi.append(pkg)
+
+        # Send these packages to BodhiWorker queue
+        self.num_of_pkgs_to_process.emit(len(pkgsForBodhi))
+        for pkg in pkgsForBodhi:
+            self.bodhi_workers_queue.put(['package_update', pkg])
+
 
 # vim: set expandtab ts=4 sts=4 sw=4 :
