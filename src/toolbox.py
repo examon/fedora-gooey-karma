@@ -43,6 +43,14 @@ class Toolbox:
         # Set package name as search text
         self.main.ui.searchEdit.setText(str(item.text(0)))
 
+    def currently_running_clicked(self, item, column):
+        # Get package name even if comment selected
+        if item.parent() is not None:
+            item = item.parent()
+
+        # Set package name as search text
+        self.main.ui.searchEdit.setText(str(item.text(0)))
+
     def favorite_item_clicked(self, item, column):
         # Get package name
         # Do this only when package is selected (not the header text)

@@ -74,7 +74,7 @@ class PackagesWorker(QtCore.QThread):
         for i in range(self.bodhi_workers_count):
             self.bodhi_workers_queue.put(['set_installed_packages', ['bodhi_worker' + str(i), self.installed_packages]])
 
-        # Wait for them to finish
+        # Wait for Bodhi workers to finish
         self.bodhi_workers_queue.join()
 
         # Send installed packages to GUI

@@ -62,6 +62,7 @@ class MainWindow(QtGui.QMainWindow):
         self.__installed_packages = {}
         self.installed_updates = {}
         self.available_updates = {}
+        self.__process_list = []
 
         # Config
         self.config = Config()
@@ -116,6 +117,7 @@ class MainWindow(QtGui.QMainWindow):
         ## What to test toolbox
         self.ui.tool_pkg_list_negative.itemClicked.connect(self.toolbox.negative_karma_clicked)
         self.ui.tool_pkg_list_favorite.itemClicked.connect(self.toolbox.favorite_item_clicked)
+        self.ui.tool_pkg_list_running.itemClicked.connect(self.toolbox.currently_running_clicked)
         self.ui.toolBoxWhatToTest.currentChanged.connect(self.toolbox.move_toolbox_buttons)
         self.ui.btn_tool_add_pkg.clicked.connect(self.toolbox.config_add_package)
         self.ui.btn_tool_remove_pkg.clicked.connect(self.toolbox.config_remove_package)
@@ -205,6 +207,21 @@ class MainWindow(QtGui.QMainWindow):
         # Prepare What to test section
         if variant in ['installed', 'available']:
             self.progressBar.setValue(self.progressBar.value() + 1)
+
+            # Currently running
+            if len(data['currently_running']) > 0:
+                # Add pkg name to list
+                pkg_name_item = QtGui.QTreeWidgetItem()
+                pkg_name_item.setText(0, str(data['itemlist_name']))
+                self.ui.tool_pkg_list_running.insertTopLevelItem(0, pkg_name_item)
+                pkg_name_item.setExpanded(True)
+
+                # Add running binaries as children
+                for proc_name in data['currently_running']:
+                    proc_item = QtGui.QTreeWidgetItem()
+                    proc_item.setText(0, str(proc_name))
+                    pkg_name_item.insertChild(0, proc_item)
+
             # Negative karma
             update_item = None
             for comment in data['formatted_comments']:
@@ -225,7 +242,7 @@ class MainWindow(QtGui.QMainWindow):
             # If it is in favorited packages, update list
             if data['parsed_nvr']['name'] in self.config.favorited_packages:
                 self.toolbox.update_favorite_ignored_pkg_lists()
-        
+
         # Catch progress only items
         if variant == 'progress_only':
             self.progressBar.setValue(self.progressBar.value() + 1)
@@ -257,6 +274,7 @@ class MainWindow(QtGui.QMainWindow):
         # Get release and put it to queue
         # Package worker will get info about it
         self.ui.loadPackagesBtn.setText('Loading packages')
+        self.ui.tool_pkg_list_running.clear()
         releasever = self.ui.releaseComboBox.currentText().split()[-1]
         self.pkg_worker_queue.put([releasever, self.ui.maxDays.value()])
 
