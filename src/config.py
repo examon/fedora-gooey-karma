@@ -23,6 +23,7 @@
 
 import os
 import pickle
+import keyring
 
 class PackagesHolder:
 
@@ -81,6 +82,8 @@ class PackagesHolder:
 
 class Config:
 
+    __KEYRING_SERVICE_NAME = 'fedora-gooey-karma-login'
+
     def __init__(self):
         self.__config_file = None
         try:  
@@ -91,18 +94,15 @@ class Config:
 
         self.ignored_packages = PackagesHolder()
         self.favorited_packages = PackagesHolder()
-        self.__fas_name = ''
+        self.fas_name = ''
         self.__fas_password = ''
+        self.load_config()
 
-    # Getters, setters, deleters
-    def get_fas_name(self): return self.__fas_name
+    # Getters, setters
+    def get_fas_name(self): return self.fas_name
     def get_fas_password(self): return self.__fas_password
-    def set_fas_name(self, name): self.__fas_name = name
-    def set_fas_password(self, password): self.__fas_password = password
-
-    # Set properties
-    fas_name = property(get_fas_name, set_fas_name)
-    fas_password = property(get_fas_password, set_fas_password)
+    def set_fas_name(self, name): self.fas_name = str(name)
+    def set_fas_password(self, password): self.__fas_password = str(password)
 
     def load_config(self):
         # Loads config from home dir
@@ -117,18 +117,34 @@ class Config:
 
         # If we have object from pickle file, assign it
         if obj:
-            for attr in ['favorited_packages', 'ignored_packages', '__fas_name', '__fas_password']:
+            for attr in ['favorited_packages', 'ignored_packages', 'fas_name']:
                 setattr(self, attr, getattr(obj, attr, None))
+
+        # If username is loaded, get password for it
+        if self.fas_name != '':
+            self.__fas_password = keyring.get_password(self.__KEYRING_SERVICE_NAME, self.fas_name)
 
 
     def save_config(self):
-        # Saves config to home dir
+        # Firstly, delete password to not save it to file
+        pass_backup = self.__fas_password
+        self.__fas_password = ''
+
+        # Save config to home dir
         try:
             f = open(self.__config_file, 'wb')
             pickle.dump(self, f)
             f.close()
         except:
             print "Cannot open config file " + self.__config_file
+
+        # Restore password
+        self.__fas_password = pass_backup
+
+        # Save password to keyring (if set)
+        if self.__fas_password != '' and self.fas_name != '':
+            keyring.set_password(self.__KEYRING_SERVICE_NAME, self.fas_name, self.__fas_password)
+
 
 
 # vim: set expandtab ts=4 sts=4 sw=4 :

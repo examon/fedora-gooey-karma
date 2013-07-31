@@ -17,6 +17,7 @@ Requires:       yum
 Requires:       yum-utils
 Requires:       bodhi-client
 Requires:       python-pyside
+Requires:       python-keyring
 
 %description
 Fedora-gooey-karma helps you to easily and fast provide feedback for all testing
