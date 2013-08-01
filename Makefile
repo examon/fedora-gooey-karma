@@ -2,20 +2,23 @@
 # Tomas Meszaros <exo@tty.sk>
 
 
-name = fedora-gooey-karma
-prefix = /usr
-bindir = $(prefix)/bin
+NAME = fedora-gooey-karma
+BINDIR = /usr/bin
+DATADIR = /usr/share
 
 all:
 
 install:
-	mkdir -p $(DESTDIR)$(prefix)/share/$(name)
-	install -D -p -m 755 src/$(name) $(DESTDIR)$(bindir)/$(name)
-	install -D -p -m 755 src/*.py $(DESTDIR)$(prefix)/share/$(name)/
+	mkdir -p $(DESTDIR)$(DATADIR)/$(NAME)
+	install -D -p -m 755 src/$(NAME) $(DESTDIR)$(BINDIR)/$(NAME)
+	install -D -p -m 755 src/*.py $(DESTDIR)$(DATADIR)/$(NAME)/
+	mkdir -p $(DESTDIR)$(DATADIR)/applications
+	install -D -p -m 644 $(NAME).desktop $(DESTDIR)$(DATADIR)/applications/
 
 uninstall:
-	rm -rf $(DESTDIR)$(prefix)/share/$(name)
-	rm -f $(DESTDIR)$(bindir)/$(name)
+	rm -rf $(DESTDIR)$(DATADIR)/$(NAME)
+	rm -f $(DESTDIR)$(BINDIR)/$(NAME)
+	rm -f $(DESTDIR)$(DATADIR)/applications/$(NAME).desktop
 
 clean:
 	rm src/*.pyc
