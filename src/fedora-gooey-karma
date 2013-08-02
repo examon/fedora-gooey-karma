@@ -276,6 +276,14 @@ class MainWindow(QtGui.QMainWindow):
         # Get release and put it to queue
         # Package worker will get info about it
         self.ui.loadPackagesBtn.setText('Loading packages')
+        # Clear holders
+        self.__installed_packages = {}
+        self.installed_updates = {}
+        self.available_updates = {}
+        self.__process_list = []
+        # Clear gui
+        self.progressBar.setValue(0)
+        self.__populate_pkgList()
         self.ui.tool_pkg_list_running.clear()
         releasever = self.ui.releaseComboBox.currentText().split()[-1]
         self.pkg_worker_queue.put([releasever, self.ui.maxDays.value()])
