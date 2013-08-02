@@ -116,6 +116,9 @@ class MainWindow(QtGui.QMainWindow):
         ## Package settings
         self.ui.pkg_settings_open_bodhi_update.clicked.connect(self.webbrowser.show_bodhi_update_in_browser)
         self.ui.pkg_settings_download_source_rpm.clicked.connect(self.webbrowser.download_source_rpm)
+        self.ui.settings_pkg_cat_normal.toggled.connect(self.__set_pkg_category)
+        self.ui.settings_pkg_cat_favorite.toggled.connect(self.__set_pkg_category)
+        self.ui.settings_pkg_cat_ignored.toggled.connect(self.__set_pkg_category)
         ## What to test toolbox
         self.ui.tool_pkg_list_negative.itemClicked.connect(self.toolbox.negative_karma_clicked)
         self.ui.tool_pkg_list_favorite.itemClicked.connect(self.toolbox.favorite_item_clicked)
@@ -141,6 +144,28 @@ class MainWindow(QtGui.QMainWindow):
         # Pkg worker threads
         self.pkg_worker.load_installed_packages_done.connect(self.__save_installed_pkg_list)
         self.pkg_worker.load_installed_packages_start.connect(self.__installed_pkg_list_loading_info)
+
+    def __set_pkg_category(self, checked):
+        # There are 2 actions on every click. We just need once
+        if not checked:
+            return
+        # When radio button in settings is toggled, assign package to one
+        # of the categories in config
+        update = self.get_bodhi_update()
+        pkg_name = update['parsed_nvr']['name']
+
+        if self.ui.settings_pkg_cat_normal.isChecked():
+            self.config.favorited_packages.remove_package(pkg_name)
+            self.config.ignored_packages.remove_package(pkg_name)
+        elif self.ui.settings_pkg_cat_favorite.isChecked():
+            self.config.favorited_packages.add_package(pkg_name)
+            self.config.ignored_packages.remove_package(pkg_name)
+        elif self.ui.settings_pkg_cat_ignored.isChecked():
+            self.config.favorited_packages.remove_package(pkg_name)
+            self.config.ignored_packages.add_package(pkg_name)
+
+        self.config.save_config()
+        self.toolbox.update_favorite_ignored_pkg_lists()
 
     def __set_num_of_pkgs_to_process(self, num):
         # Set maximum size of progressbar according to num of packages to process in Bodhi
@@ -672,6 +697,16 @@ class MainWindow(QtGui.QMainWindow):
                 comment.setText(3, i['text'])
                 comment.setToolTip(3, i['text'])
                 self.ui.treeWidget_feedback.insertTopLevelItem(0, comment)
+
+        # Settings
+        ## Toggle radio button normal/favorite/ignored pkg
+        if bodhi_update['parsed_nvr']['name'] in self.config.favorited_packages:
+            self.ui.settings_pkg_cat_favorite.setChecked(True)
+        elif bodhi_update['parsed_nvr']['name'] in self.config.ignored_packages:
+            self.ui.settings_pkg_cat_ignored.setChecked(True)
+        else:
+            self.ui.settings_pkg_cat_normal.setChecked(True)
+
 
     def exit_threads(self):
         # Try to properly exit threads
