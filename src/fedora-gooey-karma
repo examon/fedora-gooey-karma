@@ -99,51 +99,51 @@ class MainWindow(QtGui.QMainWindow):
 
         # Connects
         ## Top main menu
-        self.ui.actionQuit.triggered.connect(QtCore.QCoreApplication.instance().quit)
-        self.ui.actionAbout.triggered.connect(self.__show_message_box_about)
+        self.ui.actionQuit.triggered.connect(QtCore.QCoreApplication.instance().quit, QtCore.Qt.QueuedConnection)
+        self.ui.actionAbout.triggered.connect(self.__show_message_box_about, QtCore.Qt.QueuedConnection)
         ## Misc connects
-        self.ui.pkgList.currentItemChanged.connect(self.__show_package_detail)
-        self.ui.searchEdit.textChanged.connect(self.__populate_pkgList)
-        self.ui.installedBtn.clicked.connect(self.__show_installed)
-        self.ui.availableBtn.clicked.connect(self.__show_available)
-        self.ui.loadPackagesBtn.clicked.connect(self.__start_pkg_worker)
-        self.ui.treeWidget_bugs.itemDoubleClicked.connect(self.webbrowser.show_bug_in_browser)
-        self.ui.treeWidget_related_packages.itemDoubleClicked.connect(self.webbrowser.show_relevant_pkg_in_browser)
-        self.ui.treeWidget_test_cases.itemDoubleClicked.connect(self.webbrowser.show_testcase_in_browser)
-        self.ui.karmaCheckBox.stateChanged.connect(self.__populate_pkgList)
-        self.ui.karmaUsernameEdit.textChanged.connect(self.__populate_pkgList)
-        self.ui.sendBtn.clicked.connect(self.__send_comment)
+        self.ui.pkgList.currentItemChanged.connect(self.__show_package_detail, QtCore.Qt.QueuedConnection)
+        self.ui.searchEdit.textChanged.connect(self.__populate_pkgList, QtCore.Qt.QueuedConnection)
+        self.ui.installedBtn.clicked.connect(self.__show_installed, QtCore.Qt.QueuedConnection)
+        self.ui.availableBtn.clicked.connect(self.__show_available, QtCore.Qt.QueuedConnection)
+        self.ui.loadPackagesBtn.clicked.connect(self.__start_pkg_worker, QtCore.Qt.QueuedConnection)
+        self.ui.treeWidget_bugs.itemDoubleClicked.connect(self.webbrowser.show_bug_in_browser, QtCore.Qt.QueuedConnection)
+        self.ui.treeWidget_related_packages.itemDoubleClicked.connect(self.webbrowser.show_relevant_pkg_in_browser, QtCore.Qt.QueuedConnection)
+        self.ui.treeWidget_test_cases.itemDoubleClicked.connect(self.webbrowser.show_testcase_in_browser, QtCore.Qt.QueuedConnection)
+        self.ui.karmaCheckBox.stateChanged.connect(self.__populate_pkgList, QtCore.Qt.QueuedConnection)
+        self.ui.karmaUsernameEdit.textChanged.connect(self.__populate_pkgList, QtCore.Qt.QueuedConnection)
+        self.ui.sendBtn.clicked.connect(self.__send_comment, QtCore.Qt.QueuedConnection)
         ## Package settings
-        self.ui.pkg_settings_open_bodhi_update.clicked.connect(self.webbrowser.show_bodhi_update_in_browser)
-        self.ui.pkg_settings_download_source_rpm.clicked.connect(self.webbrowser.download_source_rpm)
-        self.ui.settings_pkg_cat_normal.toggled.connect(self.__set_pkg_category)
-        self.ui.settings_pkg_cat_favorite.toggled.connect(self.__set_pkg_category)
-        self.ui.settings_pkg_cat_ignored.toggled.connect(self.__set_pkg_category)
+        self.ui.pkg_settings_open_bodhi_update.clicked.connect(self.webbrowser.show_bodhi_update_in_browser, QtCore.Qt.QueuedConnection)
+        self.ui.pkg_settings_download_source_rpm.clicked.connect(self.webbrowser.download_source_rpm, QtCore.Qt.QueuedConnection)
+        self.ui.settings_pkg_cat_normal.toggled.connect(self.__set_pkg_category, QtCore.Qt.QueuedConnection)
+        self.ui.settings_pkg_cat_favorite.toggled.connect(self.__set_pkg_category, QtCore.Qt.QueuedConnection)
+        self.ui.settings_pkg_cat_ignored.toggled.connect(self.__set_pkg_category, QtCore.Qt.QueuedConnection)
         ## What to test toolbox
-        self.ui.tool_pkg_list_negative.itemClicked.connect(self.toolbox.negative_karma_clicked)
-        self.ui.tool_pkg_list_favorite.itemClicked.connect(self.toolbox.favorite_item_clicked)
-        self.ui.tool_pkg_list_running.itemClicked.connect(self.toolbox.currently_running_clicked)
-        self.ui.toolBoxWhatToTest.currentChanged.connect(self.toolbox.move_toolbox_buttons)
-        self.ui.btn_tool_add_pkg.clicked.connect(self.toolbox.config_add_package)
-        self.ui.btn_tool_remove_pkg.clicked.connect(self.toolbox.config_remove_package)
+        self.ui.tool_pkg_list_negative.itemClicked.connect(self.toolbox.negative_karma_clicked, QtCore.Qt.QueuedConnection)
+        self.ui.tool_pkg_list_favorite.itemClicked.connect(self.toolbox.favorite_item_clicked, QtCore.Qt.QueuedConnection)
+        self.ui.tool_pkg_list_running.itemClicked.connect(self.toolbox.currently_running_clicked, QtCore.Qt.QueuedConnection)
+        self.ui.toolBoxWhatToTest.currentChanged.connect(self.toolbox.move_toolbox_buttons, QtCore.Qt.QueuedConnection)
+        self.ui.btn_tool_add_pkg.clicked.connect(self.toolbox.config_add_package, QtCore.Qt.QueuedConnection)
+        self.ui.btn_tool_remove_pkg.clicked.connect(self.toolbox.config_remove_package, QtCore.Qt.QueuedConnection)
 
         # Start Bodhi workers
         self.bodhi_workers = []
         for i in range(self.__BODHI_WORKERS_COUNT):
             b = BodhiWorker("bodhi_worker" + str(i), self.bodhi_workers_queue)
-            b.bodhi_query_done.connect(self.__bodhi_process_result)
+            b.bodhi_query_done.connect(self.__bodhi_process_result, QtCore.Qt.QueuedConnection)
             b.start()
             self.bodhi_workers.append(b)
 
         # Start package worker
         self.pkg_worker = PackagesWorker(self.pkg_worker_queue, self.bodhi_workers_queue, self.__BODHI_WORKERS_COUNT)
-        self.pkg_worker.set_installed_packages.connect(self.__set_installed_packages)
-        self.pkg_worker.num_of_pkgs_to_process.connect(self.__set_num_of_pkgs_to_process)
+        self.pkg_worker.set_installed_packages.connect(self.__set_installed_packages, QtCore.Qt.QueuedConnection)
+        self.pkg_worker.num_of_pkgs_to_process.connect(self.__set_num_of_pkgs_to_process, QtCore.Qt.QueuedConnection)
         self.pkg_worker.start()
 
         # Pkg worker threads
-        self.pkg_worker.load_installed_packages_done.connect(self.__save_installed_pkg_list)
-        self.pkg_worker.load_installed_packages_start.connect(self.__installed_pkg_list_loading_info)
+        self.pkg_worker.load_installed_packages_done.connect(self.__save_installed_pkg_list, QtCore.Qt.QueuedConnection)
+        self.pkg_worker.load_installed_packages_start.connect(self.__installed_pkg_list_loading_info, QtCore.Qt.QueuedConnection)
 
     def __set_pkg_category(self, checked):
         # There are 2 actions on every click. We just need once
