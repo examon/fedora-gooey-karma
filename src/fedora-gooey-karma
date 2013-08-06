@@ -415,12 +415,10 @@ class MainWindow(QtGui.QMainWindow):
             karma_username = self.ui.karmaUsernameEdit.text()
             ### If there is 'not submitted' in combobox
             if re.search('not', str(self.ui.karmaFilterUserCombo.currentText())):
-                print 'not submitted'
                 for comment in update['formatted_comments']:
                     if comment['author'] == karma_username:
                         return False
             else:
-                print 'submitted'
                 for comment in update['formatted_comments']:
                     if comment['author'] == karma_username:
                         return True
