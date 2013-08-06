@@ -64,18 +64,47 @@
               <item>
                <widget class="QCheckBox" name="karmaCheckBox">
                 <property name="text">
-                 <string>karma not submitted by user</string>
+                 <string>User filter</string>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QLineEdit" name="karmaUsernameEdit">
-                <property name="dragEnabled">
-                 <bool>false</bool>
+               <widget class="QWidget" name="karmaFilterWidget" native="true">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
                 </property>
-                <property name="placeholderText">
-                 <string>username for karma filter</string>
-                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_8">
+                 <item>
+                  <widget class="QComboBox" name="karmaFilterUserCombo">
+                   <item>
+                    <property name="text">
+                     <string>Karma not submitted by user</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Karma submitted by user</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="karmaUsernameEdit">
+                   <property name="dragEnabled">
+                    <bool>false</bool>
+                   </property>
+                   <property name="placeholderText">
+                    <string>username for karma filter</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
                </widget>
               </item>
               <item>
@@ -451,7 +480,7 @@ p, li { white-space: pre-wrap; }
                <enum>QTabWidget::East</enum>
               </property>
               <property name="currentIndex">
-               <number>2</number>
+               <number>1</number>
               </property>
               <widget class="QWidget" name="tabPkg_info">
                <attribute name="title">
@@ -865,16 +894,16 @@ p, li { white-space: pre-wrap; }
   <connection>
    <sender>karmaCheckBox</sender>
    <signal>toggled(bool)</signal>
-   <receiver>karmaUsernameEdit</receiver>
-   <slot>setVisible(bool)</slot>
+   <receiver>karmaFilterWidget</receiver>
+   <slot>setShown(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>114</x>
-     <y>112</y>
+     <x>84</x>
+     <y>96</y>
     </hint>
     <hint type="destinationlabel">
-     <x>114</x>
-     <y>137</y>
+     <x>40</x>
+     <y>142</y>
     </hint>
    </hints>
   </connection>

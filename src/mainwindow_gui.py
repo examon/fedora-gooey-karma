@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'ui/mainwindow.ui'
 #
-# Created: Fri Aug  2 02:19:33 2013
+# Created: Tue Aug  6 21:50:14 2013
 #      by: pyside-uic 0.2.13 running on PySide 1.1.0
 #
 # WARNING! All changes made in this file will be lost!
@@ -46,12 +46,25 @@ class Ui_MainWindow(object):
         self.searchEdit.setObjectName("searchEdit")
         self.verticalLayout_5.addWidget(self.searchEdit)
         self.karmaCheckBox = QtGui.QCheckBox(self.groupBox)
+        self.karmaCheckBox.setChecked(False)
         self.karmaCheckBox.setObjectName("karmaCheckBox")
         self.verticalLayout_5.addWidget(self.karmaCheckBox)
-        self.karmaUsernameEdit = QtGui.QLineEdit(self.groupBox)
+        self.karmaFilterWidget = QtGui.QWidget(self.groupBox)
+        self.karmaFilterWidget.setMinimumSize(QtCore.QSize(0, 0))
+        self.karmaFilterWidget.setObjectName("karmaFilterWidget")
+        self.verticalLayout_8 = QtGui.QVBoxLayout(self.karmaFilterWidget)
+        self.verticalLayout_8.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout_8.setObjectName("verticalLayout_8")
+        self.karmaFilterUserCombo = QtGui.QComboBox(self.karmaFilterWidget)
+        self.karmaFilterUserCombo.setObjectName("karmaFilterUserCombo")
+        self.karmaFilterUserCombo.addItem("")
+        self.karmaFilterUserCombo.addItem("")
+        self.verticalLayout_8.addWidget(self.karmaFilterUserCombo)
+        self.karmaUsernameEdit = QtGui.QLineEdit(self.karmaFilterWidget)
         self.karmaUsernameEdit.setDragEnabled(False)
         self.karmaUsernameEdit.setObjectName("karmaUsernameEdit")
-        self.verticalLayout_5.addWidget(self.karmaUsernameEdit)
+        self.verticalLayout_8.addWidget(self.karmaUsernameEdit)
+        self.verticalLayout_5.addWidget(self.karmaFilterWidget)
         self.horizontalLayout = QtGui.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.installedBtn = QtGui.QPushButton(self.groupBox)
@@ -379,9 +392,9 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         self.tabWidget.setCurrentIndex(1)
         self.toolBoxWhatToTest.setCurrentIndex(3)
-        self.tabWidget_side.setCurrentIndex(2)
+        self.tabWidget_side.setCurrentIndex(1)
         self.karmaBox.setCurrentIndex(1)
-        QtCore.QObject.connect(self.karmaCheckBox, QtCore.SIGNAL("toggled(bool)"), self.karmaUsernameEdit.setVisible)
+        QtCore.QObject.connect(self.karmaCheckBox, QtCore.SIGNAL("toggled(bool)"), self.karmaFilterWidget.setShown)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         MainWindow.setTabOrder(self.karmaBox, self.sendBtn)
         MainWindow.setTabOrder(self.sendBtn, self.loadPackagesBtn)
@@ -394,7 +407,9 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "Fedora Gooey Karma", None, QtGui.QApplication.UnicodeUTF8))
         self.groupBox.setTitle(QtGui.QApplication.translate("MainWindow", "Filter", None, QtGui.QApplication.UnicodeUTF8))
         self.searchEdit.setPlaceholderText(QtGui.QApplication.translate("MainWindow", "Search packages...", None, QtGui.QApplication.UnicodeUTF8))
-        self.karmaCheckBox.setText(QtGui.QApplication.translate("MainWindow", "karma not submitted by user", None, QtGui.QApplication.UnicodeUTF8))
+        self.karmaCheckBox.setText(QtGui.QApplication.translate("MainWindow", "Karma filter", None, QtGui.QApplication.UnicodeUTF8))
+        self.karmaFilterUserCombo.setItemText(0, QtGui.QApplication.translate("MainWindow", "Karma not submitted by user", None, QtGui.QApplication.UnicodeUTF8))
+        self.karmaFilterUserCombo.setItemText(1, QtGui.QApplication.translate("MainWindow", "Karma submitted by user", None, QtGui.QApplication.UnicodeUTF8))
         self.karmaUsernameEdit.setPlaceholderText(QtGui.QApplication.translate("MainWindow", "username for karma filter", None, QtGui.QApplication.UnicodeUTF8))
         self.installedBtn.setText(QtGui.QApplication.translate("MainWindow", "Installed", None, QtGui.QApplication.UnicodeUTF8))
         self.availableBtn.setText(QtGui.QApplication.translate("MainWindow", "Available", None, QtGui.QApplication.UnicodeUTF8))

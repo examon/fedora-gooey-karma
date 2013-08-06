@@ -23,6 +23,7 @@
 #    Author: Tomas Meszaros <exo@tty.sk>
 
 import os
+import re
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '../share/fedora-gooey-karma'))
@@ -84,7 +85,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.tabWidget.setCurrentIndex(0)
         self.ui.tabWidget_side.setCurrentIndex(0)
         self.ui.toolBoxWhatToTest.setCurrentIndex(0)
-        self.ui.karmaUsernameEdit.setVisible(False)
+        self.ui.karmaFilterWidget.setVisible(False)
         self.toolbox.update_favorite_ignored_pkg_lists()
 
         # Progress bar
@@ -111,6 +112,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.treeWidget_related_packages.itemDoubleClicked.connect(self.webbrowser.show_relevant_pkg_in_browser, QtCore.Qt.QueuedConnection)
         self.ui.treeWidget_test_cases.itemDoubleClicked.connect(self.webbrowser.show_testcase_in_browser, QtCore.Qt.QueuedConnection)
         self.ui.karmaCheckBox.stateChanged.connect(self.__populate_pkgList, QtCore.Qt.QueuedConnection)
+        self.ui.karmaFilterUserCombo.currentIndexChanged.connect(self.__populate_pkgList, QtCore.Qt.QueuedConnection)
         self.ui.karmaUsernameEdit.textChanged.connect(self.__populate_pkgList, QtCore.Qt.QueuedConnection)
         self.ui.sendBtn.clicked.connect(self.__send_comment, QtCore.Qt.QueuedConnection)
         ## Package settings
@@ -409,11 +411,21 @@ class MainWindow(QtGui.QMainWindow):
                 return False
 
         ## Karma submitted filter
-        karma_username = self.ui.karmaUsernameEdit.text()
-        if self.ui.karmaCheckBox.isChecked():
-            for comment in update['formatted_comments']:
-                if comment['author'] == karma_username:
-                    return False
+        if self.ui.karmaCheckBox.isChecked() and len(self.ui.karmaUsernameEdit.text()) > 0:
+            karma_username = self.ui.karmaUsernameEdit.text()
+            ### If there is 'not submitted' in combobox
+            if re.search('not', str(self.ui.karmaFilterUserCombo.currentText())):
+                print 'not submitted'
+                for comment in update['formatted_comments']:
+                    if comment['author'] == karma_username:
+                        return False
+            else:
+                print 'submitted'
+                for comment in update['formatted_comments']:
+                    if comment['author'] == karma_username:
+                        return True
+                # Not found a comment by this user?
+                return False
 
         return True
 
