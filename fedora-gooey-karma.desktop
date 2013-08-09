@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Encoding=UTF-8
+Name=Fedora Gooey Karma
+Comment=Helps you to easily and fast provide feedback for all testing updates that you have currently installed
+Exec=fedora-gooey-karma
+Terminal=false
+OnlyShowIn=GNOME;
+Categories=GNOME;GTK;System;

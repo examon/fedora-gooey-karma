@@ -16,12 +16,12 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_3">
     <item>
-     <widget class="QSplitter" name="splitter_2">
+     <widget class="QSplitter" name="centralWidgetSplitter">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
       <widget class="QWidget" name="layoutWidget">
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <layout class="QHBoxLayout" name="centralWidgetLayout">
         <property name="sizeConstraint">
          <enum>QLayout::SetDefaultConstraint</enum>
         </property>
@@ -64,18 +64,47 @@
               <item>
                <widget class="QCheckBox" name="karmaCheckBox">
                 <property name="text">
-                 <string>karma not submitted by user</string>
+                 <string>User filter</string>
+                </property>
+                <property name="checked">
+                 <bool>false</bool>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QLineEdit" name="karmaUsernameEdit">
-                <property name="dragEnabled">
-                 <bool>false</bool>
+               <widget class="QWidget" name="karmaFilterWidget" native="true">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
                 </property>
-                <property name="placeholderText">
-                 <string>username for karma filter</string>
-                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_8">
+                 <item>
+                  <widget class="QComboBox" name="karmaFilterUserCombo">
+                   <item>
+                    <property name="text">
+                     <string>Karma not submitted by user</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Karma submitted by user</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="karmaUsernameEdit">
+                   <property name="dragEnabled">
+                    <bool>false</bool>
+                   </property>
+                   <property name="placeholderText">
+                    <string>username for karma filter</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
                </widget>
               </item>
               <item>
@@ -226,7 +255,7 @@
            <string notr="true"/>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="tabWhatToTest">
            <property name="autoFillBackground">
@@ -249,8 +278,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>704</width>
-                 <height>352</height>
+                 <width>84</width>
+                 <height>84</height>
                 </rect>
                </property>
                <attribute name="label">
@@ -283,8 +312,8 @@ p, li { white-space: pre-wrap; }
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>704</width>
-                 <height>352</height>
+                 <width>602</width>
+                 <height>103</height>
                 </rect>
                </property>
                <attribute name="label">
@@ -314,8 +343,8 @@ p, li { white-space: pre-wrap; }
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>704</width>
-                 <height>352</height>
+                 <width>84</width>
+                 <height>84</height>
                 </rect>
                </property>
                <attribute name="label">
@@ -338,8 +367,8 @@ p, li { white-space: pre-wrap; }
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>704</width>
-                 <height>352</height>
+                 <width>712</width>
+                 <height>367</height>
                 </rect>
                </property>
                <attribute name="label">
@@ -411,8 +440,8 @@ p, li { white-space: pre-wrap; }
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>704</width>
-                 <height>352</height>
+                 <width>84</width>
+                 <height>84</height>
                 </rect>
                </property>
                <attribute name="label">
@@ -451,7 +480,7 @@ p, li { white-space: pre-wrap; }
                <enum>QTabWidget::East</enum>
               </property>
               <property name="currentIndex">
-               <number>2</number>
+               <number>1</number>
               </property>
               <widget class="QWidget" name="tabPkg_info">
                <attribute name="title">
@@ -738,21 +767,24 @@ p, li { white-space: pre-wrap; }
                    </widget>
                   </item>
                   <item row="5" column="1">
-                   <widget class="QRadioButton" name="radioButton">
+                   <widget class="QRadioButton" name="settings_pkg_cat_normal">
                     <property name="text">
                      <string>Normal package</string>
+                    </property>
+                    <property name="checked">
+                     <bool>true</bool>
                     </property>
                    </widget>
                   </item>
                   <item row="6" column="1">
-                   <widget class="QRadioButton" name="radioButton_2">
+                   <widget class="QRadioButton" name="settings_pkg_cat_favorite">
                     <property name="text">
                      <string>Favorite package</string>
                     </property>
                    </widget>
                   </item>
                   <item row="7" column="1">
-                   <widget class="QRadioButton" name="radioButton_3">
+                   <widget class="QRadioButton" name="settings_pkg_cat_ignored">
                     <property name="text">
                      <string>Ignore this package</string>
                     </property>
@@ -818,7 +850,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>1002</width>
-     <height>23</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -862,16 +894,16 @@ p, li { white-space: pre-wrap; }
   <connection>
    <sender>karmaCheckBox</sender>
    <signal>toggled(bool)</signal>
-   <receiver>karmaUsernameEdit</receiver>
-   <slot>setVisible(bool)</slot>
+   <receiver>karmaFilterWidget</receiver>
+   <slot>setShown(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>114</x>
-     <y>112</y>
+     <x>84</x>
+     <y>96</y>
     </hint>
     <hint type="destinationlabel">
-     <x>114</x>
-     <y>137</y>
+     <x>40</x>
+     <y>142</y>
     </hint>
    </hints>
   </connection>

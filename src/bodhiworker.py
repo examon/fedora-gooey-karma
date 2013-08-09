@@ -22,24 +22,29 @@
 #    Author: Branislav Blaskovic <branislav@blaskovic.sk>
 #    Author: Tomas Meszaros <exo@tty.sk>
 
+import os
+import os.path
 import re
 import subprocess
 from PySide import QtCore
 from fedora.client import BodhiClient
+from idlequeue import *
 
 class BodhiWorker(QtCore.QThread):
 
     bodhi_query_done = QtCore.Signal(object)
 
-    def __init__(self, worker_name, queue, parent=None):
+    def __init__(self, worker_name, queue, main_thread, parent=None):
         super(BodhiWorker, self).__init__(parent)
         self.queue = queue
 
         self.worker_name = worker_name
+        self.main_thread = main_thread
 
         bodhi_url = 'https://admin.fedoraproject.org/updates/'
         self.bc = BodhiClient(bodhi_url, useragent="Fedora Gooey Karma", debug=None)
         self.installed_packages = []
+        self.process_list = self.get_proc_list()
 
     def run(self):
         while True:
@@ -58,7 +63,26 @@ class BodhiWorker(QtCore.QThread):
                     bodhi_update['formatted_comments'] = self.__get_comments(bodhi_update)
                     bodhi_update['relevant_packages'] = self.__get_relevant_packages(package.name)
                     bodhi_update['parsed_nvr'] = self.__parse_nvr(bodhi_update['itemlist_name'])
-                    self.bodhi_query_done.emit([variant, bodhi_update])
+                    bodhi_update['currently_running'] = []
+
+                    # Is something from this package running?
+                    ## Find package in installed packages
+                    for pkg in self.installed_packages:
+                        if pkg.name == bodhi_update['parsed_nvr']['name']:
+                            # Check for every process if it is in filelist
+                            for proc_name in self.process_list:
+                                if proc_name in pkg.filelist:
+                                    # Append binary to list
+                                    bodhi_update['currently_running'].append(proc_name)
+                            break
+
+                    # Send it to main thread
+                    main_thread_call(self.main_thread.bodhi_process_result,
+                             [variant, bodhi_update])
+                else:
+                    # If there is no info from Bodhi, send info to main thread to adjust progress bar
+                    main_thread_call(self.main_thread.bodhi_process_result,
+                             ['progress_only', None])
 
             elif action == 'set_installed_packages':
                 # Is this item for this worker?
@@ -113,7 +137,6 @@ class BodhiWorker(QtCore.QThread):
                         pkgs[category][name] = installed_pkg
         except IOError, e:
             print "BodhiWorker.__get_relevant_packages: %s" % str(e)
-
 
         return pkgs
 
@@ -178,5 +201,41 @@ class BodhiWorker(QtCore.QThread):
                 i = i + 1
 
         return comments
+
+    def which(filename):
+        # Get full path to relative bin name
+        locations = os.environ.get("PATH").split(os.pathsep)
+        candidates = []
+        for location in locations:
+            candidate = os.path.join(location, filename)
+            if os.path.isfile(candidate):
+                candidates.append(candidate)
+        return candidates
+
+    def get_proc_list(self):
+        p = subprocess.Popen(['/bin/ps', 'aux'], shell=False, stdout=subprocess.PIPE)
+        p.stdout.readline()
+        plist = []
+
+        # Get processes, find their full path and so
+        for line in p.stdout:
+            try:
+                process = re.split(' *', line.strip())[10]
+
+                # Not a process what we are looking for
+                if process[0] == '[':
+                    continue
+                # We need to get full path to process from PATH variable
+                elif process[0] != '/':
+                    process = self.which(process)[0]
+
+                # Add it to list
+                if process not in plist:
+                    plist.append(process)
+
+            except:
+                continue
+
+        return plist
 
 # vim: set expandtab ts=4 sts=4 sw=4 :

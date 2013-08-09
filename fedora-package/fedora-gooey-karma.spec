@@ -1,7 +1,7 @@
 Name:           fedora-gooey-karma
 Version:        0.1
-Release:        2%{?dist}
-Summary:        GUI tool for adding karma to Bodhi system. Similar to fedora-easy-karma.
+Release:        1%{?dist}
+Summary:        GUI tool for adding karma to Bodhi system. Similar to fedora-easy-karma
 
 Group:          Development/Tools
 License:        GPLv2+
@@ -17,6 +17,7 @@ Requires:       yum
 Requires:       yum-utils
 Requires:       bodhi-client
 Requires:       python-pyside
+Requires:       python-keyring
 
 %description
 Fedora-gooey-karma helps you to easily and fast provide feedback for all testing
@@ -33,7 +34,7 @@ similar tool to fedora-easy-karma but with graphical front-end.
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make install DESTDIR=$RPM_BUILD_ROOT prefix=%{_prefix}
+make install DESTDIR=$RPM_BUILD_ROOT BINDIR=%{_bindir} DATADIR=%{_datadir}
 
 
 %clean
@@ -42,12 +43,11 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%{_bindir}/fedora-gooey-karma
-/usr/share/fedora-gooey-karma
+%{_bindir}/%{name}
+%{_datadir}/%{name}
+%{_datadir}/applications/%{name}.desktop
 
 
 %changelog
-* Sun Jul 21 2013 Branislav Blaskovic <branislav@blaskovic.sk> - 0.1-2
-- Favorited and ignored packages, new layout
 * Thu Jul 10 2013 Branislav Blaskovic <branislav@blaskovic.sk> - 0.1-1
 - Initial spec file

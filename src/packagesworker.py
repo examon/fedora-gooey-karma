@@ -27,17 +27,14 @@ import rpm
 import datetime
 from PySide import QtCore
 from yum.misc import getCacheDir
+from idlequeue import *
 
 class PackagesWorker(QtCore.QThread):
 
-    load_available_packages_start = QtCore.Signal(object)
-    load_installed_packages_start = QtCore.Signal(object)
-    load_available_packages_done = QtCore.Signal(object)
-    load_installed_packages_done = QtCore.Signal(object)
-    set_installed_packages = QtCore.Signal(object)
-
-    def __init__(self, queue, bodhi_workers_queue, bodhi_workers_count, parent=None):
+    def __init__(self, queue, bodhi_workers_queue, bodhi_workers_count, main_thread, parent=None):
         super(PackagesWorker, self).__init__(parent)
+
+        self.main_thread = main_thread
 
         self.queue = queue
         self.bodhi_workers_queue = bodhi_workers_queue
@@ -58,32 +55,35 @@ class PackagesWorker(QtCore.QThread):
             releasever, max_days = self.queue.get()
 
             # Start loading packages
-            self.load_installed_packages_start.emit(self)
+            main_thread_call(self.main_thread.installed_pkg_list_loading_info)
             self.load_installed(releasever, max_days)
             # Wait for all packages to be loaded from bodhi
             self.bodhi_workers_queue.join()
-            self.load_installed_packages_done.emit(releasever)
+            main_thread_call(self.main_thread.save_installed_pkg_list, releasever)
 
             self.queue.task_done()
 
     def load_installed(self, releasever, max_days):
         # Load from yum rpmdb all installed packages
         self.installed_packages = self.yb.rpmdb.returnPackages()
+
         # Send it to all bodhi_workers
         for i in range(self.bodhi_workers_count):
             self.bodhi_workers_queue.put(['set_installed_packages', ['bodhi_worker' + str(i), self.installed_packages]])
 
-        # Wait for them to finish
+        # Wait for Bodhi workers to finish
         self.bodhi_workers_queue.join()
 
         # Send installed packages to GUI
-        self.set_installed_packages.emit(self.installed_packages)
+        main_thread_call(self.main_thread.set_installed_packages,
+                         self.installed_packages)
 
         # Prepare days
         now = datetime.datetime.now()
         installed_max_days = datetime.timedelta(max_days)
 
         # See packages for choosen release
+        pkgsForBodhi = []
         for pkg in self.installed_packages:
             # Get Fedora release shortcut (e.g. fc18)
             rel = pkg.release.split('.')[-1]
@@ -93,6 +93,14 @@ class PackagesWorker(QtCore.QThread):
             if installed_timedelta < installed_max_days:
                 if rel.startswith('fc') and releasever in rel:
                     if True or pkg.ui_from_repo == '@updates-testing':
-                        self.bodhi_workers_queue.put(['package_update', pkg])
+                        pkgsForBodhi.append(pkg)
+
+        # Send these packages to BodhiWorker queue
+        main_thread_call(self.main_thread.set_num_of_pkgs_to_process,
+                         len(pkgsForBodhi))
+
+        for pkg in pkgsForBodhi:
+            self.bodhi_workers_queue.put(['package_update', pkg])
+
 
 # vim: set expandtab ts=4 sts=4 sw=4 :
