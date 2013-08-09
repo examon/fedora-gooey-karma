@@ -44,6 +44,8 @@ from config import Config
 from toolbox import Toolbox
 from browser import WebBrowser
 
+from idlequeuedispatcher import ThreadDispatcher
+
 class MainWindow(QtGui.QMainWindow):
 
     __FEDORA_RELEASES = ['Fedora 19', 'Fedora 18', 'Fedora 17']
@@ -98,6 +100,10 @@ class MainWindow(QtGui.QMainWindow):
         self.__tabBar_info_backup = None
         self.__remove_package_tabs()
 
+        # Thread Dispatcher to run methods thread-safely
+        self.dispatcher = ThreadDispatcher(self)
+        self.dispatcher.start()
+
         # Connects
         ## Top main menu
         self.ui.actionQuit.triggered.connect(QtCore.QCoreApplication.instance().quit, QtCore.Qt.QueuedConnection)
@@ -132,20 +138,20 @@ class MainWindow(QtGui.QMainWindow):
         # Start Bodhi workers
         self.bodhi_workers = []
         for i in range(self.__BODHI_WORKERS_COUNT):
-            b = BodhiWorker("bodhi_worker" + str(i), self.bodhi_workers_queue)
-            b.bodhi_query_done.connect(self.__bodhi_process_result, QtCore.Qt.QueuedConnection)
+            b = BodhiWorker("bodhi_worker" + str(i), self.bodhi_workers_queue, self)
             b.start()
             self.bodhi_workers.append(b)
 
         # Start package worker
-        self.pkg_worker = PackagesWorker(self.pkg_worker_queue, self.bodhi_workers_queue, self.__BODHI_WORKERS_COUNT)
-        self.pkg_worker.set_installed_packages.connect(self.__set_installed_packages, QtCore.Qt.QueuedConnection)
-        self.pkg_worker.num_of_pkgs_to_process.connect(self.__set_num_of_pkgs_to_process, QtCore.Qt.QueuedConnection)
+        self.pkg_worker = PackagesWorker(self.pkg_worker_queue, self.bodhi_workers_queue, self.__BODHI_WORKERS_COUNT, self)
         self.pkg_worker.start()
 
-        # Pkg worker threads
-        self.pkg_worker.load_installed_packages_done.connect(self.__save_installed_pkg_list, QtCore.Qt.QueuedConnection)
-        self.pkg_worker.load_installed_packages_start.connect(self.__installed_pkg_list_loading_info, QtCore.Qt.QueuedConnection)
+    def dude(self, text):
+        print 'lol', text
+
+    def customEvent(self, event):
+        # Process idlequeue_dispatcher events
+        event.callback()
 
     def __set_pkg_category(self, checked):
         # There are 2 actions on every click. We just need once
@@ -169,7 +175,7 @@ class MainWindow(QtGui.QMainWindow):
         self.config.save_config()
         self.toolbox.update_favorite_ignored_pkg_lists()
 
-    def __set_num_of_pkgs_to_process(self, num):
+    def set_num_of_pkgs_to_process(self, num):
         # Set maximum size of progressbar according to num of packages to process in Bodhi
         self.progressBar.setMaximum(int(num))
         self.progressBar.show()
@@ -192,7 +198,7 @@ class MainWindow(QtGui.QMainWindow):
     def __add_status_item(self, item):
         self.ui.statusList.insertItem(0, str(item))
 
-    def __bodhi_process_result(self, result):
+    def bodhi_process_result(self, result):
         variant, data = result
 
         # We've got one bodhi update of installed package, add it to pkg list
@@ -276,7 +282,7 @@ class MainWindow(QtGui.QMainWindow):
         if variant == 'progress_only':
             self.progressBar.setValue(self.progressBar.value() + 1)
 
-    def __set_installed_packages(self, packages):
+    def set_installed_packages(self, packages):
         self.__add_status_item(str(len(packages)) + " installed packages on system")
         for pkg in packages:
             self.__installed_packages[pkg.nvr] = pkg
@@ -320,12 +326,12 @@ class MainWindow(QtGui.QMainWindow):
         message = "Please wait... Loading all available packages. [%s]" % release
         self.ui.statusBar.showMessage(message)
 
-    def __installed_pkg_list_loading_info(self):
+    def installed_pkg_list_loading_info(self):
         release = self.ui.releaseComboBox.currentText()
         message = "Please wait... Loading all installed packages. [%s]" % release
         self.ui.statusBar.showMessage(message)
 
-    def __save_installed_pkg_list(self, pkg_object):
+    def save_installed_pkg_list(self, pkg_object):
         message = "All installed packages has been loaded. [Fedora %s]" % pkg_object
         self.ui.statusBar.showMessage(message)
         self.ui.loadPackagesBtn.setText('Reload packages')
@@ -733,6 +739,7 @@ def main():
     win = MainWindow()
     win.show()
     ret = app.exec_()
+    win.dispatcher.stop()
     win.exit_threads()
     sys.exit(ret)
 

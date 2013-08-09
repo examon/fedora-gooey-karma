@@ -28,16 +28,18 @@ import re
 import subprocess
 from PySide import QtCore
 from fedora.client import BodhiClient
+from idlequeue import *
 
 class BodhiWorker(QtCore.QThread):
 
     bodhi_query_done = QtCore.Signal(object)
 
-    def __init__(self, worker_name, queue, parent=None):
+    def __init__(self, worker_name, queue, main_thread, parent=None):
         super(BodhiWorker, self).__init__(parent)
         self.queue = queue
 
         self.worker_name = worker_name
+        self.main_thread = main_thread
 
         bodhi_url = 'https://admin.fedoraproject.org/updates/'
         self.bc = BodhiClient(bodhi_url, useragent="Fedora Gooey Karma", debug=None)
@@ -75,10 +77,12 @@ class BodhiWorker(QtCore.QThread):
                             break
 
                     # Send it to main thread
-                    self.bodhi_query_done.emit([variant, bodhi_update])
+                    main_thread_call(self.main_thread.bodhi_process_result,
+                             [variant, bodhi_update])
                 else:
                     # If there is no info from Bodhi, send info to main thread to adjust progress bar
-                    self.bodhi_query_done.emit(['progress_only', None])
+                    main_thread_call(self.main_thread.bodhi_process_result,
+                             ['progress_only', None])
 
             elif action == 'set_installed_packages':
                 # Is this item for this worker?
