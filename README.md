@@ -1,6 +1,6 @@
 ## Fedora Gooey Karma
 
-    for more info visit: https://pagure.io/fedora-qa/fedora-gooey-karma
+    for more info visit: http://pagure.io/fedora-qa/fedora-gooey-karma
 
 ## About
 
